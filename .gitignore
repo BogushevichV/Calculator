@@ -174,3 +174,5 @@ cython_debug/
 .pypirc
 
 /.idea
+
+calculator_history.txt
