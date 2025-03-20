@@ -97,15 +97,13 @@ class Calculator:
                 # Получаем введенное выражение
                 expression = self.entry.get("1.0", tk.END).strip()
 
-                text = expression.replace("√(", "sqrt(")
-
                 # Сохраняем выражение в файл
-                self.save_to_file(text)
+                self.save_to_file(expression)
 
                 # Обрабатываем тригонометрические функции, квадратный корень и заменяем ^ на **
                 expression = self.evaluate_trigonometric_functions(expression)
                 expression = expression.replace("^", "**")
-                expression = expression.replace("√(", "math.sqrt(")
+                expression = re.sub(r'√(\d+|\(.*?\))', r'math.sqrt(\1)', expression)
 
                 # Вычисляем выражение
                 result = eval(expression)
@@ -120,7 +118,7 @@ class Calculator:
                 print(ex)
                 self.entry.delete("1.0", tk.END)
                 self.entry.insert(tk.END, "Ошибка")
-        elif char in ["sin", "cos", "tan", "cot", "√"]:
+        elif char in ["sin", "cos", "tan", "cot"]:
             self.entry.insert(tk.END, f"{char}(")
         elif char == "История":
             self.show_history()
@@ -139,7 +137,7 @@ class Calculator:
     def save_to_file(self, expression):
         try:
             # Читаем существующую историю
-            with open("calculator_history.txt", "r") as file:
+            with open("calculator_history.txt", "r", encoding='utf-8') as file:
                 lines = file.readlines()
         except FileNotFoundError:
             lines = []  # Если файл не найден, начинаем с пустой истории
@@ -152,7 +150,7 @@ class Calculator:
         lines.append(expression + "\n")
 
         # Записываем историю обратно в файл
-        with open("calculator_history.txt", "w") as file:
+        with open("calculator_history.txt", "w", encoding='utf-8') as file:
             file.writelines(lines)
 
     def show_history(self):
@@ -173,18 +171,17 @@ class Calculator:
         canvas.create_window((0, 0), window=content_frame, anchor="nw")
 
         try:
-            with open("calculator_history.txt", "r") as file:
+            with open("calculator_history.txt", "r", encoding='utf-8') as file:
                 history = file.readlines()
         except FileNotFoundError:
             history = ["История пуста"]
 
         for line in history:
-            expression = line.strip().replace("sqrt(", "√(")
             row_frame = tk.Frame(content_frame)
             row_frame.pack(fill="x", pady=2)
-            expr_label = tk.Label(row_frame, text=expression, font=("Arial", 12), width=30, anchor="w")
+            expr_label = tk.Label(row_frame, text=line, font=("Arial", 12), width=30, anchor="w")
             expr_label.pack(side="left", padx=5)
-            insert_button = tk.Button(row_frame, text="Вставить", command=lambda expr=expression: self.insert_expression(expr))
+            insert_button = tk.Button(row_frame, text="Вставить", command=lambda expr=line: self.insert_expression(expr))
             insert_button.pack(side="right", padx=5)
 
         content_frame.update_idletasks()
