@@ -81,7 +81,7 @@ class Calculator:
 
         for i in range(8):
             self.root.grid_rowconfigure(i, weight=5)
-        #self.root.grid_rowconfigure(1, weight=1)
+
         for i in range(5):
             self.root.grid_columnconfigure(i, weight=1)
 
