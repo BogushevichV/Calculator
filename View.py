@@ -22,8 +22,6 @@ class CalculatorView:
         self.setup_layout()
 
     def create_widgets(self):
-        """Создает все элементы интерфейса"""
-        # Поле ввода с горизонтальной полосой прокрутки
         self.entry_frame = tk.Frame(self.root, bg="#212224")
         self.entry_frame.grid(row=0, column=0, columnspan=5, sticky="nsew")
 
@@ -31,7 +29,6 @@ class CalculatorView:
                              bg="black", fg="white", insertbackground="white", wrap="none", undo=True)
         self.entry.grid(row=1, column=0, sticky="ew")
 
-        # Кнопка истории
         img_pil = Image.open("img/history.png")
         img_pil = img_pil.resize((50, 50))
         self.img = ImageTk.PhotoImage(img_pil)
@@ -42,7 +39,6 @@ class CalculatorView:
             command=lambda: self.controller.show_history()
         ).grid(row=1, column=1, sticky="ew", padx=1, pady=1)
 
-        # Настройка скроллбара
         style = ttk.Style()
         style.theme_use("clam")
         style.configure("Custom.Horizontal.TScrollbar",
@@ -59,7 +55,6 @@ class CalculatorView:
         self.scrollbar.grid(row=2, column=0, columnspan=5, sticky="nsew")
         self.entry.config(xscrollcommand=self.scrollbar.set)
 
-        # Кнопки калькулятора
         buttons = [
             '7', '8', '9', '/', 'sin',
             '4', '5', '6', '*', 'cos',
@@ -86,11 +81,9 @@ class CalculatorView:
                 col_val = 0
                 row_val += 1
 
-        # Привязка клавиш
         self.entry.bind("<KeyPress>", self.controller.on_key_press)
 
     def setup_layout(self):
-        """Настраивает расположение элементов"""
         self.entry_frame.grid_columnconfigure(0, weight=1)
         for i in range(3):
             self.entry_frame.grid_rowconfigure(i, weight=1)
@@ -102,24 +95,19 @@ class CalculatorView:
             self.root.grid_columnconfigure(i, weight=1)
 
     def get_entry_text(self):
-        """Возвращает текст из поля ввода"""
         return self.entry.get("1.0", tk.END).strip()
 
     def clear_entry(self):
-        """Очищает поле ввода"""
         self.entry.delete("1.0", tk.END)
 
     def set_entry_text(self, text):
-        """Устанавливает текст в поле ввода"""
         self.entry.delete("1.0", tk.END)
         self.entry.insert(tk.END, text)
 
     def insert_text(self, text):
-        """Вставляет текст в текущую позицию курсора"""
         self.entry.insert(tk.END, text)
 
     def show_history_window(self, history):
-        """Отображает окно истории"""
         history_window = tk.Toplevel(self.root)
         history_window.title("История")
         history_window.geometry("450x500")
