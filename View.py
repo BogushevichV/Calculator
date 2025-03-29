@@ -1,6 +1,7 @@
 import tkinter as tk
 from PIL import Image, ImageTk
 from tkinter import ttk
+import math
 
 class CalculatorView:
     """Представление калькулятора - отвечает за отображение интерфейса"""
@@ -14,17 +15,64 @@ class CalculatorView:
         self.root = root
         self.controller = controller
 
+        self.base_font_size = 15
+        self.entry_font_size = 25
+        self.options_font_size = 10
+
+        self.initial_width = 500
+        self.initial_height = 500
+
+        self.scale_factor = 1
+
         self.options = options
         self.buttons = buttons
 
         self.root.title("Калькулятор")
-        self.root.geometry("500x500")
+        self.root.geometry(f"{self.initial_width}x{self.initial_height}")
         self.root.configure(bg="#212224")
+
+        self.root.bind("<Configure>", self.on_window_resize)
+
+        self.all_buttons = []
+        self.option_checkbuttons = []
 
         self.create_option_menu()
         self.create_widgets()
         self.update_buttons(self.options, self.buttons)
         self.setup_layout()
+
+    def on_window_resize(self, event):
+        """Обработчик изменения размера окна"""
+        if event.widget == self.root:
+            # Получаем текущие размеры окна
+            width = self.root.winfo_width()
+            height = self.root.winfo_height()
+
+            # Вычисляем коэффициенты масштабирования
+            width_scale = width / self.initial_width
+            height_scale = height / self.initial_height
+
+            self.scale_factor = math.sqrt(width_scale * height_scale)
+            self.scale_factor = max(0.7, min(self.scale_factor, 2.0))
+
+            # Обновляем размер шрифта для всех элементов
+            self.update_font_sizes()
+
+    def update_font_sizes(self):
+        """Обновляет размеры шрифтов для всех элементов интерфейса"""
+        # Обновляем шрифт кнопок
+        new_button_font = ("Arial", int(self.base_font_size * self.scale_factor), "bold")
+        for button in self.all_buttons:
+            button.config(font=new_button_font)
+
+        # Обновляем шрифт поля ввода
+        new_entry_font = ("Arial", int(self.entry_font_size * self.scale_factor))
+        self.entry.config(font=new_entry_font)
+
+        # Обновляем шрифт чекбоксов
+        new_option_font = ("Arial", int(self.options_font_size * self.scale_factor))
+        for chk in self.option_checkbuttons:
+            chk.config(font=new_option_font)
 
     def create_option_menu(self):
         """Создает меню выбора функционала"""
@@ -42,6 +90,7 @@ class CalculatorView:
                 command=self.update_functionality
             )
             chk.grid(row=0, column=col, sticky="nsew")
+            self.option_checkbuttons.append(chk)
             col += 1
 
     def update_functionality(self):
@@ -54,6 +103,8 @@ class CalculatorView:
         for widget in self.root.winfo_children():
             if isinstance(widget, tk.Button):
                 widget.destroy()
+
+        self.all_buttons = []
 
         row_val = 3
         col_val = 0
@@ -69,10 +120,13 @@ class CalculatorView:
                     command=lambda b=button: self.controller.on_button_click(b)
                 )
                 btn.grid(row=row_val, column=col_val, sticky="nsew", padx=1, pady=1)
+                self.all_buttons.append(btn)
 
                 col_val += 1
             col_val = 0
             row_val += 1
+
+        self.update_font_sizes()
 
     def create_widgets(self):
         """Создает все элементы интерфейса"""
