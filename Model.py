@@ -4,8 +4,8 @@ import re
 class CalculatorModel:
     """Модель калькулятора - отвечает за хранение данных и бизнес-логику"""
 
-    def __init__(self, options):
-        self.history_file = "calculator_history.txt"
+    def __init__(self, options, history_options):
+        self.history_options = history_options
         self.options = options
 
     def calculate(self, expression):
@@ -57,30 +57,37 @@ class CalculatorModel:
         """Обновляет список доступных операций"""
         self.options = options
 
+    def update_history_options(self, history_options):
+        """Обновляет настройки истории"""
+        self.history_options = history_options
+
     def save_to_history(self, expression):
         """Сохраняет выражение в истории"""
+        if not self.history_options.get("Сохранение выражений", True):
+            return  # Не сохраняем, если опция отключена
+        
         try:
             # Читаем существующую историю
-            with open(self.history_file, "r", encoding='utf-8') as file:
+            with open(self.history_options["Путь файла"], "r", encoding='utf-8') as file:
                 lines = file.readlines()
         except FileNotFoundError:
             lines = []
 
         # Удаляем первую запись, если лимит превышен
-        if len(lines) >= 100:
+        if len(lines) >= self.history_options["Лимит истории"]:
             lines.pop(0)
 
         # Добавляем новую запись
         lines.append(expression + "\n")
 
         # Записываем историю обратно в файл
-        with open(self.history_file, "w", encoding='utf-8') as file:
+        with open(self.history_options["Путь файла"], "w", encoding='utf-8') as file:
             file.writelines(lines)
 
     def get_history(self):
         """Возвращает историю вычислений"""
         try:
-            with open(self.history_file, "r", encoding='utf-8') as file:
+            with open(self.history_options["Путь файла"], "r", encoding='utf-8') as file:
                 return file.readlines()
         except FileNotFoundError:
             return ["История пуста"]

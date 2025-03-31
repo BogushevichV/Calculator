@@ -1,3 +1,4 @@
+#Builder.py
 class CalculatorBuilder:
     """Строитель калькулятора, отвечает за поэтапное добавление функций"""
 
@@ -5,13 +6,18 @@ class CalculatorBuilder:
         self.options = {
             "Научные функции": False,
             "Программные операции": False,
-            "Инженерные операции": False
+            "Инженерные операции": False,
         }
         self.buttons = [['7', '8', '9', '/'],
                         ['4', '5', '6', '*'],
                         ['1', '2', '3', '-'],
                         ['C', '0', '=', '+'],
                         ['.', '(', ')']]
+        self.history_options = {
+            "Сохранение выражений": True,
+            "Лимит истории": 100,
+            "Путь файла": "calculator_history.txt"
+        }
 
     def add_scientific_functions(self):
         """Добавляет научные функции"""
@@ -30,6 +36,21 @@ class CalculatorBuilder:
         self.options["Инженерные операции"] = True
         self.add_buttons(['log', 'exp', 'mod'])
         return self
+    
+    def toggle_history_saving(self, enabled=True):
+        """Включает или выключает сохранение выражений в историю"""
+        self.history_options["Сохранение выражений"] = enabled
+        return self
+
+    def set_history_limit(self, limit):
+        """Устанавливает лимит истории"""
+        self.history_options["Лимит истории"] = limit
+        return self
+
+    def set_history_file_path(self, file_path):
+        """Устанавливает путь к файлу истории"""
+        self.history_options["Путь файла"] = file_path
+        return self
 
     def add_buttons(self, new_buttons):
         j = 0
@@ -46,4 +67,4 @@ class CalculatorBuilder:
 
     def build(self):
         """Создает и возвращает итоговый объект"""
-        return self.options, self.buttons
+        return self.options, self.history_options, self.buttons

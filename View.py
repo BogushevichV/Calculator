@@ -6,7 +6,7 @@ import math
 class CalculatorView:
     """Представление калькулятора - отвечает за отображение интерфейса"""
 
-    def __init__(self, root, controller, options, buttons):
+    def __init__(self, root, controller, history_options, options, buttons):
         self.buttons = None
         self.scrollbar = None
         self.img = None
@@ -19,11 +19,12 @@ class CalculatorView:
         self.entry_font_size = 25
         self.options_font_size = 10
 
-        self.initial_width = 500
+        self.initial_width = 525
         self.initial_height = 500
 
         self.scale_factor = 1
 
+        self.history_options = history_options
         self.options = options
         self.buttons = buttons
 
@@ -34,9 +35,10 @@ class CalculatorView:
         self.root.bind("<Configure>", self.on_window_resize)
 
         self.all_buttons = []
+        self.history_option_widgets = []
         self.option_checkbuttons = []
 
-        self.create_option_menu()
+        self.create_options()
         self.create_widgets()
         self.update_buttons(self.options, self.buttons)
         self.setup_layout()
@@ -74,10 +76,20 @@ class CalculatorView:
         for chk in self.option_checkbuttons:
             chk.config(font=new_option_font)
 
+        for widget in self.history_option_widgets:
+            widget.config(font=new_option_font)
+
+    def create_options(self):
+        """Создает контейнер для настроек"""
+        self.options_container = tk.Frame(self.root, bg="#212224")
+        self.options_container.grid(row=0,column=0, columnspan=10, sticky="nsew")
+        self.create_option_menu()
+        self.create_history_menu()
+        
     def create_option_menu(self):
         """Создает меню выбора функционала"""
-        self.options_frame = tk.Frame(self.root, bg="#212224")
-        self.options_frame.grid(row=0, column=0, columnspan=10, sticky="nsew")
+        self.options_frame = tk.Frame(self.options_container, bg="#212224")
+        self.options_frame.grid(row=1, column=0, columnspan=1, sticky="nsew")
 
         self.options_vars = {
             key: tk.BooleanVar(value=val) for key, val in self.options.items()
@@ -92,11 +104,48 @@ class CalculatorView:
             chk.grid(row=0, column=col, sticky="nsew")
             self.option_checkbuttons.append(chk)
             col += 1
+    
+    def create_history_menu(self):
+        """Создает меню опций истории"""
+        self.history_options_frame = tk.Frame(self.options_container, bg="#212224", borderwidth=1)
+        self.history_options_frame.grid(row=0, column=0, columnspan=1, sticky="nsew")
+
+        self.history_options_vars = {
+            "Сохранение выражений": tk.BooleanVar(value=self.history_options["Сохранение выражений"]),
+            "Лимит истории": tk.IntVar(value=self.history_options["Лимит истории"]),
+            "Путь файла": tk.StringVar(value=self.history_options["Путь файла"]),
+        }
+
+        widget = tk.Checkbutton(
+                self.history_options_frame, text="Сохранение выражений",
+                variable=self.history_options_vars["Сохранение выражений"],
+                command=self.update_functionality
+        )
+        
+        widget.grid(row=0, column=0, sticky="nsew")
+        self.history_option_widgets.append(widget)
+
+        widget = tk.Button(
+                self.history_options_frame, text="Изменить лимит истории",
+                command=self.controller.change_history_limit
+        )
+        
+        widget.grid(row=0, column=1, sticky="nsew")
+        self.history_option_widgets.append(widget)
+        
+        widget = tk.Button(
+                self.history_options_frame, text="Изменить путь файла истории",
+                command=self.controller.change_history_path
+        )
+        
+        widget.grid(row=0, column=2, sticky="nsew")
+        self.history_option_widgets.append(widget)
 
     def update_functionality(self):
         """Обновляет калькулятор при изменении настроек"""
+        selected_history_options = {key: var.get() for key, var in self.history_options_vars.items()}
         selected_options = {key: var.get() for key, var in self.options_vars.items()}
-        self.controller.update_options(selected_options)
+        self.controller.update_options(selected_options, selected_history_options)
 
     def update_buttons(self, options, buttons):
         """Динамически обновляет кнопки"""
@@ -133,7 +182,7 @@ class CalculatorView:
 
         # Поле ввода с горизонтальной полосой прокрутки
         self.entry_frame = tk.Frame(self.root, bg="#212224")
-        self.entry_frame.grid(row=1, column=0, columnspan=10, sticky="nsew")
+        self.entry_frame.grid(row=2, column=0, columnspan=10, sticky="nsew")
 
         self.entry = tk.Text(self.entry_frame, font=("Arial", 25), bd=2, height=1,
                              bg="black", fg="white", insertbackground="white", wrap="none", undo=True)
@@ -200,7 +249,7 @@ class CalculatorView:
     def insert_text(self, text):
         """Вставляет текст в текущую позицию курсора"""
         self.entry.insert(tk.END, text)
-
+    
     def show_history_window(self, history):
         """Отображает окно истории"""
         history_window = tk.Toplevel(self.root)
