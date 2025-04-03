@@ -33,7 +33,6 @@ class CalculatorController:
         self.view.update_buttons(self.options, self.buttons)
 
     def on_button_click(self, char):
-        """Обрабатывает нажатие кнопки"""
         if char == "C":
             self.view.clear_entry()
         elif char == "=":
@@ -53,7 +52,6 @@ class CalculatorController:
             self.view.insert_text(char)
 
     def show_history(self):
-        """Показывает историю вычислений"""
         history = self.model.get_history()
         self.view.show_history_window(history)
 
@@ -80,12 +78,12 @@ class CalculatorController:
             self.model.update_history_options(self.history_options)
 
     def insert_from_history(self, expression):
-        """Вставляет выражение из истории в калькулятор"""
         self.view.set_entry_text(expression.strip())
 
     @staticmethod
     def on_key_press(event):
         """Обрабатывает нажатие клавиш"""
         allowed_keys = "0123456789+-*/.=acdegilmnoprstx()^√"
+
         if event.char not in allowed_keys and event.keysym not in ["BackSpace", "Return", "Tab", "Left", "Right"]:
             return "break"
