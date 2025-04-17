@@ -13,6 +13,7 @@ class CalculatorModel:
             # Обрабатываем тригонометрические функции, квадратный корень и заменяем ^ на **
             expression = self.preprocess_expression(expression)
 
+
             # Вычисляем выражение
             result = eval(expression)
 
@@ -27,6 +28,7 @@ class CalculatorModel:
         expression = expression.replace("^", "**")  # Замена ^ на **
 
         """Обрабатывает тригонометрические функции в выражении"""
+
 
         expression = re.sub(r'sin\((.*?)\)', lambda m: str(math.sin(math.radians(float(m.group(1))))), expression)
         expression = re.sub(r'cos\((.*?)\)', lambda m: str(math.cos(math.radians(float(m.group(1))))), expression)
@@ -70,6 +72,7 @@ class CalculatorModel:
             # Читаем существующую историю
             with open(self.history_options["Путь файла"], "r", encoding='utf-8') as file:
 
+
                 lines = file.readlines()
         except FileNotFoundError:
             lines = []
@@ -91,3 +94,4 @@ class CalculatorModel:
                 return file.readlines()
         except FileNotFoundError:
             return ["История пуста"]
+

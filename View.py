@@ -3,10 +3,12 @@ from PIL import Image, ImageTk
 from tkinter import ttk
 import math
 
+
 class CalculatorView:
     """Представление калькулятора - отвечает за отображение интерфейса"""
 
     def __init__(self, root, controller, history_options, options, buttons):
+
         self.buttons = None
         self.scrollbar = None
         self.img = None
@@ -185,9 +187,11 @@ class CalculatorView:
         self.entry_frame = tk.Frame(self.root, bg="#212224")
         self.entry_frame.grid(row=2, column=0, columnspan=10, sticky="nsew")
 
+
         self.entry = tk.Text(self.entry_frame, font=("Arial", 25), bd=2, height=1,
                              bg="black", fg="white", insertbackground="white", wrap="none", undo=True)
         self.entry.grid(row=1, column=0, sticky="ew")
+
 
         img_pil = Image.open("img/history.png")
         img_pil = img_pil.resize((50, 50))
@@ -198,6 +202,7 @@ class CalculatorView:
             bg="#26292e",
             command=lambda: self.controller.show_history()
         ).grid(row=1, column=1, sticky="ew", padx=1, pady=1)
+
 
         style = ttk.Style()
         style.theme_use("clam")
@@ -215,10 +220,12 @@ class CalculatorView:
         self.scrollbar.grid(row=2, column=0, columnspan=10, sticky="nsew")
         self.entry.config(xscrollcommand=self.scrollbar.set)
         
+
         # Привязка клавиш
         self.entry.bind("<KeyPress>", self.controller.on_key_press)
 
     def setup_layout(self):
+
         self.entry_frame.grid_columnconfigure(0, weight=1)
         for i in range(3):
             self.entry_frame.grid_rowconfigure(i, weight=1)
@@ -238,6 +245,7 @@ class CalculatorView:
         self.entry.delete("1.0", tk.END)
 
     def set_entry_text(self, text):
+
         self.entry.delete("1.0", tk.END)
         self.entry.insert(tk.END, text)
 
@@ -245,6 +253,7 @@ class CalculatorView:
         self.entry.insert(tk.END, text)
     
     def show_history_window(self, history):
+
         history_window = tk.Toplevel(self.root)
         history_window.title("История")
         history_window.geometry("450x500")
@@ -275,3 +284,4 @@ class CalculatorView:
         content_frame.update_idletasks()
         canvas.config(scrollregion=canvas.bbox("all"))
         history_window.geometry(f"{int(self.root.winfo_width() * 0.9)}x{self.root.winfo_height()}")
+
