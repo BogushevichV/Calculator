@@ -7,7 +7,7 @@ import math
 class CalculatorView:
     """Представление калькулятора - отвечает за отображение интерфейса"""
 
-    def __init__(self, root, controller, history_options, options, buttons):
+    def __init__(self, root, controller, history_options, options, buttons, decorator_options=None):
 
         self.buttons = None
         self.scrollbar = None
@@ -29,6 +29,7 @@ class CalculatorView:
         self.history_options = history_options
         self.options = options
         self.buttons = buttons
+        self.decorator_options = decorator_options or {}
 
         self.root.title("Калькулятор")
         self.root.geometry(f"{self.initial_width}x{self.initial_height}")
@@ -39,11 +40,16 @@ class CalculatorView:
         self.all_buttons = []
         self.history_option_widgets = []
         self.option_checkbuttons = []
+        self.decorator_option_widgets = []
 
         self.create_options()
         self.create_widgets()
         self.update_buttons(self.options, self.buttons)
         self.setup_layout()
+        
+        # Создаем статусную строку для вывода информации о времени выполнения и т.д.
+        self.status_bar = tk.Label(self.root, text="", bd=1, relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar.grid(row=100, column=0, columnspan=10, sticky="nsew")
 
     def on_window_resize(self, event):
         """Обработчик изменения размера окна"""
@@ -80,13 +86,17 @@ class CalculatorView:
 
         for widget in self.history_option_widgets:
             widget.config(font=new_option_font)
+            
+        for widget in self.decorator_option_widgets:
+            widget.config(font=new_option_font)
 
     def create_options(self):
         """Создает контейнер для настроек"""
         self.options_container = tk.Frame(self.root, bg="#212224")
-        self.options_container.grid(row=0,column=0, columnspan=10, sticky="nsew")
+        self.options_container.grid(row=0, column=0, columnspan=10, sticky="nsew")
         self.create_option_menu()
         self.create_history_menu()
+        self.create_decorator_menu()
         
     def create_option_menu(self):
         """Создает меню выбора функционала"""
@@ -142,17 +152,68 @@ class CalculatorView:
         
         widget.grid(row=0, column=2, sticky="nsew")
         self.history_option_widgets.append(widget)
+        
+    def create_decorator_menu(self):
+        """Создает меню опций декораторов"""
+        if not self.decorator_options:
+            return
+            
+        self.decorator_options_frame = tk.Frame(self.options_container, bg="#212224", borderwidth=1)
+        self.decorator_options_frame.grid(row=2, column=0, columnspan=1, sticky="nsew")
+        
+        # Переключатели для декораторов
+        self.decorator_options_vars = {
+            key: tk.BooleanVar(value=val) for key, val in self.decorator_options.items()
+        }
+        
+        # Метка для секции декораторов
+        label = tk.Label(self.decorator_options_frame, text="Декораторы:", bg="#212224", fg="white")
+        label.grid(row=0, column=0, sticky="nsew")
+        self.decorator_option_widgets.append(label)
+        
+        col = 1
+        for option in self.decorator_options_vars:
+            chk = tk.Checkbutton(
+                self.decorator_options_frame, text=option,
+                variable=self.decorator_options_vars[option],
+                command=self.update_decorator_functionality
+            )
+            chk.grid(row=0, column=col, sticky="nsew")
+            self.decorator_option_widgets.append(chk)
+            col += 1
+            
+        # Кнопки для настройки декораторов
+        precision_btn = tk.Button(
+            self.decorator_options_frame, text="Изменить точность",
+            command=self.controller.change_precision
+        )
+        precision_btn.grid(row=1, column=1, sticky="nsew")
+        self.decorator_option_widgets.append(precision_btn)
+
 
     def update_functionality(self):
         """Обновляет калькулятор при изменении настроек"""
         selected_history_options = {key: var.get() for key, var in self.history_options_vars.items()}
         selected_options = {key: var.get() for key, var in self.options_vars.items()}
-        self.controller.update_options(selected_options, selected_history_options)
+        
+        if hasattr(self, 'decorator_options_vars'):
+            selected_decorator_options = {key: var.get() for key, var in self.decorator_options_vars.items()}
+            self.controller.update_options(selected_options, selected_history_options, selected_decorator_options)
+        else:
+            self.controller.update_options(selected_options, selected_history_options)
+            
+    def update_decorator_functionality(self):
+        """Обновляет настройки декораторов"""
+        if hasattr(self, 'decorator_options_vars'):
+            selected_history_options = {key: var.get() for key, var in self.history_options_vars.items()}
+            selected_options = {key: var.get() for key, var in self.options_vars.items()}
+            selected_decorator_options = {key: var.get() for key, var in self.decorator_options_vars.items()}
+            self.controller.update_options(selected_options, selected_history_options, selected_decorator_options)
 
     def update_buttons(self, options, buttons):
         """Динамически обновляет кнопки"""
         for widget in self.root.winfo_children():
-            if isinstance(widget, tk.Button):
+            if isinstance(widget, tk.Button) and widget not in self.decorator_option_widgets and widget not in self.history_option_widgets:
                 widget.destroy()
 
         self.all_buttons = []
@@ -164,10 +225,17 @@ class CalculatorView:
 
         for row in buttons:
             for button in row:
+                # Определяем цвет кнопки
+                fg_color = "white" if button.isdigit() or button == "=" else ("#038575" if button == "C" else "#327eed")
+                bg_color = "#307af7" if button == "=" else "#24282c"
+                
+                # Особый цвет для кнопок памяти
+                if button in ["MS", "MR", "M+", "MC"]:
+                    fg_color = "#ffcc00"
+                
                 btn = tk.Button(
                     self.root, text=button, width=60 // 10, height=60 // 30, font=("Arial", 15, "bold"),
-                    fg="white" if button.isdigit() or button == "=" else ("#038575" if button == "C" else "#327eed"),
-                    bg="#307af7" if button == "=" else "#24282c",
+                    fg=fg_color, bg=bg_color,
                     command=lambda b=button: self.controller.on_button_click(b)
                 )
                 btn.grid(row=row_val, column=col_val, sticky="nsew", padx=1, pady=1)
@@ -178,6 +246,21 @@ class CalculatorView:
             row_val += 1
 
         self.update_font_sizes()
+        
+    def update_decorator_options(self, decorator_options):
+        """Обновляет опции декораторов"""
+        self.decorator_options = decorator_options
+        
+        # Обновляем переключатели декораторов, если они уже созданы
+        if hasattr(self, 'decorator_options_vars'):
+            for key, val in decorator_options.items():
+                if key in self.decorator_options_vars:
+                    self.decorator_options_vars[key].set(val)
+                else:
+                    self.decorator_options_vars[key] = tk.BooleanVar(value=val)
+        else:
+            # Создаем меню декораторов, если его еще нет
+            self.create_decorator_menu()
 
     def create_widgets(self):
         """Создает все элементы интерфейса"""
@@ -245,15 +328,26 @@ class CalculatorView:
         self.entry.delete("1.0", tk.END)
 
     def set_entry_text(self, text):
-
         self.entry.delete("1.0", tk.END)
         self.entry.insert(tk.END, text)
 
     def insert_text(self, text):
         self.entry.insert(tk.END, text)
     
+    def show_execution_time(self, time_ms):
+        """Показывает время выполнения в статусной строке"""
+        self.status_bar.config(text=f"Время выполнения: {time_ms:.3f} мс")
+        
+    def show_memory_status(self, status):
+        """Показывает статус операций с памятью"""
+        self.status_bar.config(text=status)
+        
+    def show_status_message(self, message):
+        """Показывает сообщение в статусной строке"""
+        self.status_bar.config(text=message)
+    
     def show_history_window(self, history):
-
+        """Показывает окно истории"""
         history_window = tk.Toplevel(self.root)
         history_window.title("История")
         history_window.geometry("450x500")
@@ -284,4 +378,3 @@ class CalculatorView:
         content_frame.update_idletasks()
         canvas.config(scrollregion=canvas.bbox("all"))
         history_window.geometry(f"{int(self.root.winfo_width() * 0.9)}x{self.root.winfo_height()}")
-

@@ -1,7 +1,8 @@
-#Controller.py
+# Controller.py
 from Model import CalculatorModel
 from View import CalculatorView
 from Builder import CalculatorBuilder
+from Decorator import TimingDecorator, MemoryDecorator, PrecisionDecorator
 from tkinter import filedialog, simpledialog
 
 
@@ -10,15 +11,37 @@ class CalculatorController:
 
     def __init__(self, root):
         self.builder = CalculatorBuilder()
-        self.options, self.history_options, self.buttons = self.builder.build()
+        self.options, self.history_options, self.buttons, self.decorator_options, self.precision_value = self.builder.build()
 
-        self.model = CalculatorModel(self.options, self.history_options)
-        self.view = CalculatorView(root, self, self.history_options, self.options, self.buttons)
+        # Создаем базовую модель
+        self.base_model = CalculatorModel(self.options, self.history_options)
+        
+        # Применяем декораторы в соответствии с настройками
+        self.calculator = self.apply_decorators(self.base_model)
+        
+        self.view = CalculatorView(root, self, self.history_options, self.options, self.buttons, self.decorator_options)
 
-    def update_options(self, selected_options, selected_history_options):
+    def apply_decorators(self, model):
+        """Применяет выбранные декораторы к модели"""
+        calculator = model
+        
+        # Применяем декораторы в соответствии с настройками
+        if self.decorator_options["Настраиваемая точность"]:
+            calculator = PrecisionDecorator(calculator, self.precision_value)
+            
+        if self.decorator_options["Измерение времени"]:
+            calculator = TimingDecorator(calculator)
+            
+        if self.decorator_options["Память"]:
+            calculator = MemoryDecorator(calculator)
+            
+        return calculator
+
+    def update_options(self, selected_options, selected_history_options, selected_decorator_options=None, precision_value=5):
         """Обновляет функционал через Builder"""
         self.builder = CalculatorBuilder()  # Новый Строитель
 
+        # Применяем выбранные опции
         if selected_options["Научные функции"]:
             self.builder.add_scientific_functions()
         if selected_options["Программные операции"]:
@@ -27,21 +50,51 @@ class CalculatorController:
             self.builder.add_engineering_operations()
 
         self.builder.toggle_history_saving(selected_history_options["Сохранение выражений"])
+        
+        # Применяем декораторы
+        if selected_decorator_options:
+            if selected_decorator_options["Измерение времени"]:
+                self.builder.add_timing_decorator()
+            if selected_decorator_options["Память"]:
+                self.builder.add_memory_decorator()
+            if selected_decorator_options["Настраиваемая точность"]:
+                self.builder.add_precision_decorator(precision_value)
 
-        self.options, self.history_options, self.buttons = self.builder.build()
-        self.model.update_options(self.options)
-        self.model.update_history_options(self.history_options)
+        # Получаем обновленные настройки
+        self.options, self.history_options, self.buttons, self.decorator_options, self.precision_value = self.builder.build()
+        
+        # Обновляем модель и применяем декораторы
+        self.base_model.update_options(self.options)
+        self.base_model.update_history_options(self.history_options)
+        self.calculator = self.apply_decorators(self.base_model)
+        
+        # Обновляем представление
         self.view.update_buttons(self.options, self.buttons)
+        self.view.update_decorator_options(self.decorator_options)
 
     def on_button_click(self, char):
-
         if char == "C":
             self.view.clear_entry()
         elif char == "=":
             try:
                 expression = self.view.get_entry_text()
-                result = self.model.calculate(expression)
-                self.model.save_to_history(expression)
+                result = self.calculator.calculate(expression)
+                self.base_model.save_to_history(expression)
+                
+                # Если включен декоратор измерения времени, показываем информацию о времени
+                if self.decorator_options["Измерение времени"]:
+                    execution_time = None
+                    # Ищем TimingDecorator в цепочке декораторов
+                    current = self.calculator
+                    while hasattr(current, '_calculator'):
+                        if isinstance(current, TimingDecorator):
+                            execution_time = current.get_last_execution_time()
+                            break
+                        current = current._calculator
+                    
+                    if execution_time is not None:
+                        self.view.show_execution_time(execution_time)
+                
                 self.view.set_entry_text(str(result))
             except Exception as ex:
                 print(ex)
@@ -50,11 +103,58 @@ class CalculatorController:
             self.view.insert_text(f"{char}(")
         elif char == "^":
             self.view.insert_text("^")
+        # Обработка кнопок памяти
+        elif char == "MS" and self.decorator_options["Память"]:
+            try:
+                value = self.view.get_entry_text()
+                # Ищем MemoryDecorator в цепочке декораторов
+                current = self.calculator
+                while hasattr(current, '_calculator'):
+                    if isinstance(current, MemoryDecorator):
+                        current.memory_store(value)
+                        self.view.show_memory_status("Сохранено в памяти")
+                        break
+                    current = current._calculator
+            except Exception as ex:
+                print(ex)
+                self.view.show_memory_status("Ошибка сохранения")
+        elif char == "MR" and self.decorator_options["Память"]:
+            # Ищем MemoryDecorator в цепочке декораторов
+            current = self.calculator
+            while hasattr(current, '_calculator'):
+                if isinstance(current, MemoryDecorator):
+                    value = current.memory_recall()
+                    self.view.insert_text(str(value))
+                    break
+                current = current._calculator
+        elif char == "M+" and self.decorator_options["Память"]:
+            try:
+                value = self.view.get_entry_text()
+                # Ищем MemoryDecorator в цепочке декораторов
+                current = self.calculator
+                while hasattr(current, '_calculator'):
+                    if isinstance(current, MemoryDecorator):
+                        current.memory_add(value)
+                        self.view.show_memory_status("Добавлено к памяти")
+                        break
+                    current = current._calculator
+            except Exception as ex:
+                print(ex)
+                self.view.show_memory_status("Ошибка добавления")
+        elif char == "MC" and self.decorator_options["Память"]:
+            # Ищем MemoryDecorator в цепочке декораторов
+            current = self.calculator
+            while hasattr(current, '_calculator'):
+                if isinstance(current, MemoryDecorator):
+                    current.memory_clear()
+                    self.view.show_memory_status("Память очищена")
+                    break
+                current = current._calculator
         else:
             self.view.insert_text(char)
 
     def show_history(self):
-        history = self.model.get_history()
+        history = self.base_model.get_history()
         self.view.show_history_window(history)
 
     def change_history_limit(self):
@@ -65,7 +165,7 @@ class CalculatorController:
                                           minvalue=1, maxvalue=1000)
         if new_limit:
             self.history_options["Лимит истории"] = new_limit
-            self.model.update_history_options(self.history_options)
+            self.base_model.update_history_options(self.history_options)
 
     def change_history_path(self):
         """Изменяет путь к файлу истории"""
@@ -77,17 +177,32 @@ class CalculatorController:
         )
         if new_path:
             self.history_options["Путь файла"] = new_path
-            self.model.update_history_options(self.history_options)
+            self.base_model.update_history_options(self.history_options)
 
     def insert_from_history(self, expression):
-
         self.view.set_entry_text(expression.strip())
+
+    def change_precision(self):
+        """Изменяет точность вычислений"""
+        new_precision = simpledialog.askinteger("Точность", 
+                                         "Введите новую точность вычислений (количество знаков после запятой):",
+                                         initialvalue=self.precision_value,
+                                         minvalue=0, maxvalue=15)
+        if new_precision is not None:
+            self.precision_value = new_precision
+            # Обновляем декоратор точности
+            self.update_options(
+                self.options, 
+                self.history_options, 
+                self.decorator_options,
+                self.precision_value,
+            )
+            self.view.show_status_message(f"Точность установлена: {new_precision} знаков")
 
     @staticmethod
     def on_key_press(event):
         """Обрабатывает нажатие клавиш"""
         allowed_keys = "0123456789+-*/.=acdegilmnoprstx()^√"
-
 
         if event.char not in allowed_keys and event.keysym not in ["BackSpace", "Return", "Tab", "Left", "Right"]:
             return "break"
