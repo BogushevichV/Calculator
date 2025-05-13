@@ -42,7 +42,9 @@ class CalculatorView:
         self.option_checkbuttons = []
         self.decorator_option_widgets = []
 
-        self.create_options()
+        # Создаем главное меню вместо отдельных опций
+        self.create_menu_bar()
+        
         self.create_widgets()
         self.update_buttons(self.options, self.buttons)
         self.setup_layout()
@@ -90,106 +92,187 @@ class CalculatorView:
         for widget in self.decorator_option_widgets:
             widget.config(font=new_option_font)
 
-    def create_options(self):
-        """Создает контейнер для настроек"""
-        self.options_container = tk.Frame(self.root, bg="#212224")
-        self.options_container.grid(row=0, column=0, columnspan=10, sticky="nsew")
-        self.create_option_menu()
-        self.create_history_menu()
-        self.create_decorator_menu()
+    def create_menu_bar(self):
+        """Создает верхнее меню для всех опций"""
+        self.menu_bar = tk.Menu(self.root)
+        self.root.config(menu=self.menu_bar)
         
-    def create_option_menu(self):
-        """Создает меню выбора функционала"""
-        self.options_frame = tk.Frame(self.options_container, bg="#212224")
-        self.options_frame.grid(row=1, column=0, columnspan=1, sticky="nsew")
-
+        # Создаем меню функций
+        self.functions_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.menu_bar.add_cascade(label="Функции", menu=self.functions_menu)
+        
+        # Создаем переменные для хранения состояний опций
         self.options_vars = {
             key: tk.BooleanVar(value=val) for key, val in self.options.items()
         }
-
-        col = 0
-        for option in self.options_vars:
-            chk = tk.Checkbutton(
-                self.options_frame, text=option, variable=self.options_vars[option],
+        
+        # Добавляем элементы в меню функций
+        for option, var in self.options_vars.items():
+            self.functions_menu.add_checkbutton(
+                label=option, 
+                variable=var, 
                 command=self.update_functionality
             )
-            chk.grid(row=0, column=col, sticky="nsew")
-            self.option_checkbuttons.append(chk)
-            col += 1
-    
-    def create_history_menu(self):
-        """Создает меню опций истории"""
-        self.history_options_frame = tk.Frame(self.options_container, bg="#212224", borderwidth=1)
-        self.history_options_frame.grid(row=0, column=0, columnspan=1, sticky="nsew")
-
+        
+        # Создаем меню истории
+        self.history_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.menu_bar.add_cascade(label="История", menu=self.history_menu)
+        
+        # Создаем переменные для хранения настроек истории
         self.history_options_vars = {
             "Сохранение выражений": tk.BooleanVar(value=self.history_options["Сохранение выражений"]),
             "Лимит истории": tk.IntVar(value=self.history_options["Лимит истории"]),
             "Путь файла": tk.StringVar(value=self.history_options["Путь файла"]),
         }
-
-        widget = tk.Checkbutton(
-                self.history_options_frame, text="Сохранение выражений",
-                variable=self.history_options_vars["Сохранение выражений"],
-                command=self.update_functionality
+        
+        # Добавляем элементы в меню истории
+        self.history_menu.add_checkbutton(
+            label="Сохранение выражений",
+            variable=self.history_options_vars["Сохранение выражений"],
+            command=self.update_functionality
+        )
+        self.history_menu.add_command(
+            label="Изменить лимит истории",
+            command=self.controller.change_history_limit
+        )
+        self.history_menu.add_command(
+            label="Изменить путь файла истории",
+            command=self.controller.change_history_path
+        )
+        self.history_menu.add_separator()
+        self.history_menu.add_command(
+            label="Показать историю",
+            command=lambda: self.controller.show_history()
         )
         
-        widget.grid(row=0, column=0, sticky="nsew")
-        self.history_option_widgets.append(widget)
-
-        widget = tk.Button(
-                self.history_options_frame, text="Изменить лимит истории",
-                command=self.controller.change_history_limit
-        )
+        # Создаем меню декораторов
+        self.decorator_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.menu_bar.add_cascade(label="Декораторы", menu=self.decorator_menu)
         
-        widget.grid(row=0, column=1, sticky="nsew")
-        self.history_option_widgets.append(widget)
-        
-        widget = tk.Button(
-                self.history_options_frame, text="Изменить путь файла истории",
-                command=self.controller.change_history_path
-        )
-        
-        widget.grid(row=0, column=2, sticky="nsew")
-        self.history_option_widgets.append(widget)
-        
-    def create_decorator_menu(self):
-        """Создает меню опций декораторов"""
-        if not self.decorator_options:
-            return
-            
-        self.decorator_options_frame = tk.Frame(self.options_container, bg="#212224", borderwidth=1)
-        self.decorator_options_frame.grid(row=2, column=0, columnspan=1, sticky="nsew")
-        
-        # Переключатели для декораторов
+        # Создаем переменные для хранения настроек декораторов
         self.decorator_options_vars = {
             key: tk.BooleanVar(value=val) for key, val in self.decorator_options.items()
         }
         
-        # Метка для секции декораторов
-        label = tk.Label(self.decorator_options_frame, text="Декораторы:", bg="#212224", fg="white")
-        label.grid(row=0, column=0, sticky="nsew")
-        self.decorator_option_widgets.append(label)
-        
-        col = 1
-        for option in self.decorator_options_vars:
-            chk = tk.Checkbutton(
-                self.decorator_options_frame, text=option,
-                variable=self.decorator_options_vars[option],
+        # Добавляем элементы в меню декораторов
+        for option, var in self.decorator_options_vars.items():
+            self.decorator_menu.add_checkbutton(
+                label=option,
+                variable=var,
                 command=self.update_decorator_functionality
             )
-            chk.grid(row=0, column=col, sticky="nsew")
-            self.decorator_option_widgets.append(chk)
-            col += 1
-            
-        # Кнопки для настройки декораторов
-        precision_btn = tk.Button(
-            self.decorator_options_frame, text="Изменить точность",
+        
+        # Добавляем специальные команды для декораторов
+        self.decorator_menu.add_separator()
+        self.decorator_menu.add_command(
+            label="Изменить точность",
             command=self.controller.change_precision
         )
-        precision_btn.grid(row=1, column=1, sticky="nsew")
-        self.decorator_option_widgets.append(precision_btn)
+        
+        # Добавляем меню "Вид" для управления интерфейсом
+        self.view_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.menu_bar.add_cascade(label="Вид", menu=self.view_menu)
+        
+        # Добавляем переменную для переключения панели опций
+        self.show_options_panel = tk.BooleanVar(value=False)
+        self.view_menu.add_checkbutton(
+            label="Показать панель опций",
+            variable=self.show_options_panel,
+            command=self.toggle_options_panel
+        )
+        
+        # Создаем скрытую панель для опций
+        self.create_options_panel()
 
+    def create_options_panel(self):
+        """Создает панель опций, которая будет скрыта/показана по запросу"""
+        self.options_panel = tk.Frame(self.root, bg="#212224")
+        self.options_panel.grid(row=1, column=0, columnspan=10, sticky="nsew")
+        self.options_panel.grid_remove()  # Скрываем панель по умолчанию
+        
+        # Панель функций
+        functions_frame = tk.LabelFrame(self.options_panel, text="Функции", fg="white", bg="#24282c")
+        functions_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        
+        row = 0
+        for option, var in self.options_vars.items():
+            chk = tk.Checkbutton(
+                functions_frame, text=option, variable=var,
+                command=self.update_functionality, bg="#24282c", fg="white", 
+                selectcolor="#212224", activebackground="#24282c"
+            )
+            chk.grid(row=row, column=0, sticky="w", padx=5, pady=2)
+            self.option_checkbuttons.append(chk)
+            row += 1
+        
+        # Панель истории
+        history_frame = tk.LabelFrame(self.options_panel, text="История", fg="white", bg="#24282c")
+        history_frame.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
+        
+        # Сохранение выражений
+        chk = tk.Checkbutton(
+            history_frame, text="Сохранение выражений",
+            variable=self.history_options_vars["Сохранение выражений"],
+            command=self.update_functionality, bg="#24282c", fg="white",
+            selectcolor="#212224", activebackground="#24282c"
+        )
+        chk.grid(row=0, column=0, sticky="w", padx=5, pady=2)
+        self.history_option_widgets.append(chk)
+        
+        # Лимит истории
+        btn = tk.Button(
+            history_frame, text="Изменить лимит истории",
+            command=self.controller.change_history_limit,
+            bg="#307af7", fg="white"
+        )
+        btn.grid(row=1, column=0, sticky="w", padx=5, pady=2)
+        self.history_option_widgets.append(btn)
+        
+        # Путь к файлу
+        btn = tk.Button(
+            history_frame, text="Изменить путь файла истории",
+            command=self.controller.change_history_path,
+            bg="#307af7", fg="white"
+        )
+        btn.grid(row=2, column=0, sticky="w", padx=5, pady=2)
+        self.history_option_widgets.append(btn)
+        
+        # Панель декораторов
+        decorator_frame = tk.LabelFrame(self.options_panel, text="Декораторы", fg="white", bg="#24282c")
+        decorator_frame.grid(row=0, column=2, sticky="nsew", padx=5, pady=5)
+        
+        row = 0
+        for option, var in self.decorator_options_vars.items():
+            chk = tk.Checkbutton(
+                decorator_frame, text=option,
+                variable=var,
+                command=self.update_decorator_functionality,
+                bg="#24282c", fg="white", selectcolor="#212224", activebackground="#24282c"
+            )
+            chk.grid(row=row, column=0, sticky="w", padx=5, pady=2)
+            self.decorator_option_widgets.append(chk)
+            row += 1
+        
+        # Кнопка точности
+        btn = tk.Button(
+            decorator_frame, text="Изменить точность",
+            command=self.controller.change_precision,
+            bg="#307af7", fg="white"
+        )
+        btn.grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        self.decorator_option_widgets.append(btn)
+        
+        # Настраиваем авторасширение
+        self.options_panel.grid_columnconfigure(0, weight=1)
+        self.options_panel.grid_columnconfigure(1, weight=1)
+        self.options_panel.grid_columnconfigure(2, weight=1)
+
+    def toggle_options_panel(self):
+        """Показывает или скрывает панель опций"""
+        if self.show_options_panel.get():
+            self.options_panel.grid()
+        else:
+            self.options_panel.grid_remove()
 
     def update_functionality(self):
         """Обновляет калькулятор при изменении настроек"""
@@ -218,7 +301,7 @@ class CalculatorView:
 
         self.all_buttons = []
 
-        row_val = 3
+        row_val = 3  # Оставляем место для панели опций
         col_val = 0
 
         self.update_layout(len(buttons[0]))
@@ -251,30 +334,29 @@ class CalculatorView:
         """Обновляет опции декораторов"""
         self.decorator_options = decorator_options
         
-        # Обновляем переключатели декораторов, если они уже созданы
-        if hasattr(self, 'decorator_options_vars'):
-            for key, val in decorator_options.items():
-                if key in self.decorator_options_vars:
-                    self.decorator_options_vars[key].set(val)
-                else:
-                    self.decorator_options_vars[key] = tk.BooleanVar(value=val)
-        else:
-            # Создаем меню декораторов, если его еще нет
-            self.create_decorator_menu()
+        # Обновляем переключатели декораторов
+        for key, val in decorator_options.items():
+            if key in self.decorator_options_vars:
+                self.decorator_options_vars[key].set(val)
+            else:
+                self.decorator_options_vars[key] = tk.BooleanVar(value=val)
+                # Добавляем новый элемент в меню декораторов
+                self.decorator_menu.add_checkbutton(
+                    label=key,
+                    variable=self.decorator_options_vars[key],
+                    command=self.update_decorator_functionality
+                )
 
     def create_widgets(self):
         """Создает все элементы интерфейса"""
 
         # Поле ввода с горизонтальной полосой прокрутки
-
         self.entry_frame = tk.Frame(self.root, bg="#212224")
         self.entry_frame.grid(row=2, column=0, columnspan=10, sticky="nsew")
-
 
         self.entry = tk.Text(self.entry_frame, font=("Arial", 25), bd=2, height=1,
                              bg="black", fg="white", insertbackground="white", wrap="none", undo=True)
         self.entry.grid(row=1, column=0, sticky="ew")
-
 
         img_pil = Image.open("img/history.png")
         img_pil = img_pil.resize((50, 50))
@@ -285,7 +367,6 @@ class CalculatorView:
             bg="#26292e",
             command=lambda: self.controller.show_history()
         ).grid(row=1, column=1, sticky="ew", padx=1, pady=1)
-
 
         style = ttk.Style()
         style.theme_use("clam")
@@ -302,13 +383,11 @@ class CalculatorView:
                                        style="Custom.Horizontal.TScrollbar")
         self.scrollbar.grid(row=2, column=0, columnspan=10, sticky="nsew")
         self.entry.config(xscrollcommand=self.scrollbar.set)
-        
 
         # Привязка клавиш
         self.entry.bind("<KeyPress>", self.controller.on_key_press)
 
     def setup_layout(self):
-
         self.entry_frame.grid_columnconfigure(0, weight=1)
         for i in range(3):
             self.entry_frame.grid_rowconfigure(i, weight=1)
