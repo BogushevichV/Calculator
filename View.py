@@ -8,13 +8,14 @@ class CalculatorView:
     """Представление калькулятора - отвечает за отображение интерфейса"""
 
     def __init__(self, root, controller, history_options, options, buttons, decorator_options=None):
+        self.root = root
 
         self.buttons = None
         self.scrollbar = None
         self.img = None
         self.entry = None
         self.entry_frame = None
-        self.root = root
+
         self.controller = controller
 
         self.base_font_size = 15
@@ -34,6 +35,10 @@ class CalculatorView:
         self.root.title("Калькулятор")
         self.root.geometry(f"{self.initial_width}x{self.initial_height}")
         self.root.configure(bg="#212224")
+        img = Image.open("img/icon.png")
+        photo = ImageTk.PhotoImage(img)
+        self.root.iconphoto(False, photo)
+        self.root.config(cursor="spraycan")
 
         self.root.bind("<Configure>", self.on_window_resize)
 
@@ -96,35 +101,35 @@ class CalculatorView:
         """Создает верхнее меню для всех опций"""
         self.menu_bar = tk.Menu(self.root)
         self.root.config(menu=self.menu_bar)
-        
+
         # Создаем меню функций
-        self.functions_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.functions_menu = tk.Menu(self.menu_bar,tearoff=0,)
         self.menu_bar.add_cascade(label="Функции", menu=self.functions_menu)
-        
+
         # Создаем переменные для хранения состояний опций
         self.options_vars = {
             key: tk.BooleanVar(value=val) for key, val in self.options.items()
         }
-        
+
         # Добавляем элементы в меню функций
         for option, var in self.options_vars.items():
             self.functions_menu.add_checkbutton(
-                label=option, 
-                variable=var, 
+                label=option,
+                variable=var,
                 command=self.update_functionality
             )
-        
+
         # Создаем меню истории
         self.history_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.menu_bar.add_cascade(label="История", menu=self.history_menu)
-        
+
         # Создаем переменные для хранения настроек истории
         self.history_options_vars = {
             "Сохранение выражений": tk.BooleanVar(value=self.history_options["Сохранение выражений"]),
             "Лимит истории": tk.IntVar(value=self.history_options["Лимит истории"]),
             "Путь файла": tk.StringVar(value=self.history_options["Путь файла"]),
         }
-        
+
         # Добавляем элементы в меню истории
         self.history_menu.add_checkbutton(
             label="Сохранение выражений",
@@ -144,16 +149,16 @@ class CalculatorView:
             label="Показать историю",
             command=lambda: self.controller.show_history()
         )
-        
+
         # Создаем меню декораторов
         self.decorator_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.menu_bar.add_cascade(label="Декораторы", menu=self.decorator_menu)
-        
+
         # Создаем переменные для хранения настроек декораторов
         self.decorator_options_vars = {
             key: tk.BooleanVar(value=val) for key, val in self.decorator_options.items()
         }
-        
+
         # Добавляем элементы в меню декораторов
         for option, var in self.decorator_options_vars.items():
             self.decorator_menu.add_checkbutton(
@@ -161,18 +166,18 @@ class CalculatorView:
                 variable=var,
                 command=self.update_decorator_functionality
             )
-        
+
         # Добавляем специальные команды для декораторов
         self.decorator_menu.add_separator()
         self.decorator_menu.add_command(
             label="Изменить точность",
             command=self.controller.change_precision
         )
-        
+
         # Добавляем меню "Вид" для управления интерфейсом
         self.view_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.menu_bar.add_cascade(label="Вид", menu=self.view_menu)
-        
+
         # Добавляем переменную для переключения панели опций
         self.show_options_panel = tk.BooleanVar(value=False)
         self.view_menu.add_checkbutton(
@@ -180,7 +185,7 @@ class CalculatorView:
             variable=self.show_options_panel,
             command=self.toggle_options_panel
         )
-        
+
         # Создаем скрытую панель для опций
         self.create_options_panel()
 
@@ -198,7 +203,7 @@ class CalculatorView:
         for option, var in self.options_vars.items():
             chk = tk.Checkbutton(
                 functions_frame, text=option, variable=var,
-                command=self.update_functionality, bg="#24282c", fg="white", 
+                command=self.update_functionality,cursor="pencil", bg="#24282c", fg="white",
                 selectcolor="#212224", activebackground="#24282c"
             )
             chk.grid(row=row, column=0, sticky="w", padx=5, pady=2)
@@ -214,7 +219,7 @@ class CalculatorView:
             history_frame, text="Сохранение выражений",
             variable=self.history_options_vars["Сохранение выражений"],
             command=self.update_functionality, bg="#24282c", fg="white",
-            selectcolor="#212224", activebackground="#24282c"
+            selectcolor="#212224", activebackground="#24282c", cursor="pencil"
         )
         chk.grid(row=0, column=0, sticky="w", padx=5, pady=2)
         self.history_option_widgets.append(chk)
@@ -223,7 +228,7 @@ class CalculatorView:
         btn = tk.Button(
             history_frame, text="Изменить лимит истории",
             command=self.controller.change_history_limit,
-            bg="#307af7", fg="white"
+            bg="#307af7", fg="white", cursor="hand2"
         )
         btn.grid(row=1, column=0, sticky="w", padx=5, pady=2)
         self.history_option_widgets.append(btn)
@@ -232,7 +237,7 @@ class CalculatorView:
         btn = tk.Button(
             history_frame, text="Изменить путь файла истории",
             command=self.controller.change_history_path,
-            bg="#307af7", fg="white"
+            bg="#307af7", fg="white", cursor="hand2"
         )
         btn.grid(row=2, column=0, sticky="w", padx=5, pady=2)
         self.history_option_widgets.append(btn)
@@ -247,7 +252,7 @@ class CalculatorView:
                 decorator_frame, text=option,
                 variable=var,
                 command=self.update_decorator_functionality,
-                bg="#24282c", fg="white", selectcolor="#212224", activebackground="#24282c"
+                bg="#24282c", fg="white", selectcolor="#212224", activebackground="#24282c",cursor="pencil"
             )
             chk.grid(row=row, column=0, sticky="w", padx=5, pady=2)
             self.decorator_option_widgets.append(chk)
@@ -257,7 +262,7 @@ class CalculatorView:
         btn = tk.Button(
             decorator_frame, text="Изменить точность",
             command=self.controller.change_precision,
-            bg="#307af7", fg="white"
+            bg="#307af7", fg="white", cursor="hand2"
         )
         btn.grid(row=row, column=0, sticky="w", padx=5, pady=2)
         self.decorator_option_widgets.append(btn)
@@ -318,7 +323,7 @@ class CalculatorView:
                 
                 btn = tk.Button(
                     self.root, text=button, width=60 // 10, height=60 // 30, font=("Arial", 15, "bold"),
-                    fg=fg_color, bg=bg_color,
+                    fg=fg_color, bg=bg_color, cursor="hand2",
                     command=lambda b=button: self.controller.on_button_click(b)
                 )
                 btn.grid(row=row_val, column=col_val, sticky="nsew", padx=1, pady=1)
@@ -364,7 +369,7 @@ class CalculatorView:
 
         tk.Button(
             self.entry_frame, image=self.img, compound="center",
-            bg="#26292e",
+            bg="#26292e", cursor="hand2",
             command=lambda: self.controller.show_history()
         ).grid(row=1, column=1, sticky="ew", padx=1, pady=1)
 
@@ -379,7 +384,7 @@ class CalculatorView:
                   background=[("active", "#636363")])
 
         self.scrollbar = ttk.Scrollbar(self.entry_frame, orient="horizontal",
-                                       command=self.entry.xview,
+                                       command=self.entry.xview, cursor="hand1",
                                        style="Custom.Horizontal.TScrollbar")
         self.scrollbar.grid(row=2, column=0, columnspan=10, sticky="nsew")
         self.entry.config(xscrollcommand=self.scrollbar.set)
@@ -435,7 +440,7 @@ class CalculatorView:
         history_frame.pack(fill="both", expand=True)
 
         canvas = tk.Canvas(history_frame)
-        scrollbar = tk.Scrollbar(history_frame, orient="vertical", command=canvas.yview)
+        scrollbar = tk.Scrollbar(history_frame, orient="vertical", cursor="hand1",command=canvas.yview)
         canvas.configure(yscrollcommand=scrollbar.set)
 
         content_frame = tk.Frame(canvas)
@@ -449,7 +454,7 @@ class CalculatorView:
             expr_label = tk.Label(row_frame, text=line, font=("Arial", 12), width=30, anchor="w")
             expr_label.pack(side="left", padx=5)
             insert_button = tk.Button(
-                row_frame, text="Вставить",
+                row_frame, text="Вставить",cursor="hand2",
                 command=lambda expr=line: self.controller.insert_from_history(expr)
             )
             insert_button.pack(side="right", padx=5)
