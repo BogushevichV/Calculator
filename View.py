@@ -50,7 +50,7 @@ class CalculatorView:
         self.setup_layout()
         
         # Создаем статусную строку для вывода информации о времени выполнения и т.д.
-        self.status_bar = tk.Label(self.root, text="", bd=1, relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = tk.Label(self.root, text="", bd=1, relief=tk.SUNKEN, anchor=tk.W, font=30)
         self.status_bar.grid(row=100, column=0, columnspan=10, sticky="nsew")
 
     def on_window_resize(self, event):

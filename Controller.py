@@ -1,4 +1,5 @@
 # Controller.py
+from Commands import CalculateCommand, MemoryClearCommand, MemoryStoreCommand
 from Model import CalculatorModel
 from View import CalculatorView
 from Builder import CalculatorBuilder
@@ -78,7 +79,8 @@ class CalculatorController:
         elif char == "=":
             try:
                 expression = self.view.get_entry_text()
-                result = self.calculator.calculate(expression)
+                command = CalculateCommand(self.calculator, expression, self.base_model)
+                result = command.execute()#self.calculator.calculate(expression)
                 self.base_model.save_to_history(expression)
                 
                 # Если включен декоратор измерения времени, показываем информацию о времени
@@ -108,13 +110,11 @@ class CalculatorController:
             try:
                 value = self.view.get_entry_text()
                 # Ищем MemoryDecorator в цепочке декораторов
-                current = self.calculator
-                while hasattr(current, '_calculator'):
-                    if isinstance(current, MemoryDecorator):
-                        current.memory_store(value)
-                        self.view.show_memory_status("Сохранено в памяти")
-                        break
-                    current = current._calculator
+                decorator = self.find_decorator(MemoryDecorator)
+                if decorator:
+                    command = MemoryStoreCommand(decorator, value)
+                    command.execute()
+                    self.view.show_memory_status("Сохранено в памяти")
             except Exception as ex:
                 print(ex)
                 self.view.show_memory_status("Ошибка сохранения")
@@ -143,19 +143,25 @@ class CalculatorController:
                 self.view.show_memory_status("Ошибка добавления")
         elif char == "MC" and self.decorator_options["Память"]:
             # Ищем MemoryDecorator в цепочке декораторов
-            current = self.calculator
-            while hasattr(current, '_calculator'):
-                if isinstance(current, MemoryDecorator):
-                    current.memory_clear()
-                    self.view.show_memory_status("Память очищена")
-                    break
-                current = current._calculator
+            decorator = self.find_decorator(MemoryDecorator)
+            if decorator:
+                command = MemoryClearCommand(decorator)
+                command.execute()
+                self.view.show_memory_status("Память очищена")
         else:
             self.view.insert_text(char)
 
     def show_history(self):
         history = self.base_model.get_history()
         self.view.show_history_window(history)
+
+    def find_decorator(self, decorator_type):
+        current = self.calculator
+        while hasattr(current, '_calculator'):
+            if isinstance(current, decorator_type):
+                return current
+            current = current._calculator
+        return None
 
     def change_history_limit(self):
         """Изменяет лимит истории"""
