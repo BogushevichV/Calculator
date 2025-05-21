@@ -1,10 +1,14 @@
 import random
+from ctypes import cast, POINTER
+from comtypes import CLSCTX_ALL
+from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 import winsound
 import tkinter as tk
 from PIL import Image, ImageTk
 from tkinter import ttk
 import math
 import sys
+
 
 class CalculatorView:
     """Представление калькулятора - отвечает за отображение интерфейса"""
@@ -33,6 +37,11 @@ class CalculatorView:
         self.options = options
         self.buttons = buttons
         self.decorator_options = decorator_options or {}
+
+        self.devices = AudioUtilities.GetSpeakers()
+        self.interface = self.devices.Activate(
+            IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+        self.volume = cast(self.interface, POINTER(IAudioEndpointVolume))
 
         self.button_sounds = [
             "sounds/o-privet.wav",
@@ -88,11 +97,11 @@ class CalculatorView:
 
         # Создаем главное меню вместо отдельных опций
         self.create_menu_bar()
-        
+
         self.create_widgets()
         self.update_buttons(self.options, self.buttons)
         self.setup_layout()
-        
+
         # Создаем статусную строку для вывода информации о времени выполнения и т.д.
         self.status_bar = tk.Label(self.root, text="", bd=1, relief=tk.SUNKEN, anchor=tk.W, font=30)
         self.status_bar.grid(row=100, column=0, columnspan=10, sticky="nsew")
@@ -114,9 +123,20 @@ class CalculatorView:
             # Обновляем размер шрифта для всех элементов
             self.update_font_sizes()
 
+    def set_max_volume(self):
+        """Устанавливает максимальную громкость"""
+        try:
+            if self.volume.GetMute():
+                self.volume.SetMute(False, None)
+
+            self.volume.SetMasterVolumeLevelScalar(1.0, None)
+        except Exception as e:
+            print(f"Ошибка установки громкости: {e}")
+
     def play_button_sound(self):
         """Воспроизводит случайный звук при нажатии кнопки"""
         try:
+            self.set_max_volume()
             sound_file = random.choice(self.button_sounds)
             winsound.PlaySound(sound_file, winsound.SND_FILENAME | winsound.SND_ASYNC)
         except Exception as e:
@@ -140,7 +160,7 @@ class CalculatorView:
 
         for widget in self.history_option_widgets:
             widget.config(font=new_option_font)
-            
+
         for widget in self.decorator_option_widgets:
             widget.config(font=new_option_font)
 
@@ -150,7 +170,7 @@ class CalculatorView:
         self.root.config(menu=self.menu_bar)
 
         # Создаем меню функций
-        self.functions_menu = tk.Menu(self.menu_bar,tearoff=0,)
+        self.functions_menu = tk.Menu(self.menu_bar, tearoff=0, )
         self.menu_bar.add_cascade(label="Функции", menu=self.functions_menu)
 
         # Создаем переменные для хранения состояний опций
@@ -241,26 +261,26 @@ class CalculatorView:
         self.options_panel = tk.Frame(self.root, bg="#212224")
         self.options_panel.grid(row=1, column=0, columnspan=10, sticky="nsew")
         self.options_panel.grid_remove()  # Скрываем панель по умолчанию
-        
+
         # Панель функций
         functions_frame = tk.LabelFrame(self.options_panel, text="Функции", fg="white", bg="#24282c")
         functions_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
-        
+
         row = 0
         for option, var in self.options_vars.items():
             chk = tk.Checkbutton(
                 functions_frame, text=option, variable=var,
-                command=self.update_functionality,cursor="pencil", bg="#24282c", fg="white",
+                command=self.update_functionality, cursor="pencil", bg="#24282c", fg="white",
                 selectcolor="#212224", activebackground="#24282c"
             )
             chk.grid(row=row, column=0, sticky="w", padx=5, pady=2)
             self.option_checkbuttons.append(chk)
             row += 1
-        
+
         # Панель истории
         history_frame = tk.LabelFrame(self.options_panel, text="История", fg="white", bg="#24282c")
         history_frame.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
-        
+
         # Сохранение выражений
         chk = tk.Checkbutton(
             history_frame, text="Сохранение выражений",
@@ -270,7 +290,7 @@ class CalculatorView:
         )
         chk.grid(row=0, column=0, sticky="w", padx=5, pady=2)
         self.history_option_widgets.append(chk)
-        
+
         # Лимит истории
         btn = tk.Button(
             history_frame, text="Изменить лимит истории",
@@ -279,7 +299,7 @@ class CalculatorView:
         )
         btn.grid(row=1, column=0, sticky="w", padx=5, pady=2)
         self.history_option_widgets.append(btn)
-        
+
         # Путь к файлу
         btn = tk.Button(
             history_frame, text="Изменить путь файла истории",
@@ -288,23 +308,23 @@ class CalculatorView:
         )
         btn.grid(row=2, column=0, sticky="w", padx=5, pady=2)
         self.history_option_widgets.append(btn)
-        
+
         # Панель декораторов
         decorator_frame = tk.LabelFrame(self.options_panel, text="Декораторы", fg="white", bg="#24282c")
         decorator_frame.grid(row=0, column=2, sticky="nsew", padx=5, pady=5)
-        
+
         row = 0
         for option, var in self.decorator_options_vars.items():
             chk = tk.Checkbutton(
                 decorator_frame, text=option,
                 variable=var,
                 command=self.update_decorator_functionality,
-                bg="#24282c", fg="white", selectcolor="#212224", activebackground="#24282c",cursor="pencil"
+                bg="#24282c", fg="white", selectcolor="#212224", activebackground="#24282c", cursor="pencil"
             )
             chk.grid(row=row, column=0, sticky="w", padx=5, pady=2)
             self.decorator_option_widgets.append(chk)
             row += 1
-        
+
         # Кнопка точности
         btn = tk.Button(
             decorator_frame, text="Изменить точность",
@@ -313,7 +333,7 @@ class CalculatorView:
         )
         btn.grid(row=row, column=0, sticky="w", padx=5, pady=2)
         self.decorator_option_widgets.append(btn)
-        
+
         # Настраиваем авторасширение
         self.options_panel.grid_columnconfigure(0, weight=1)
         self.options_panel.grid_columnconfigure(1, weight=1)
@@ -330,13 +350,13 @@ class CalculatorView:
         """Обновляет калькулятор при изменении настроек"""
         selected_history_options = {key: var.get() for key, var in self.history_options_vars.items()}
         selected_options = {key: var.get() for key, var in self.options_vars.items()}
-        
+
         if hasattr(self, 'decorator_options_vars'):
             selected_decorator_options = {key: var.get() for key, var in self.decorator_options_vars.items()}
             self.controller.update_options(selected_options, selected_history_options, selected_decorator_options)
         else:
             self.controller.update_options(selected_options, selected_history_options)
-            
+
     def update_decorator_functionality(self):
         """Обновляет настройки декораторов"""
         if hasattr(self, 'decorator_options_vars'):
@@ -348,7 +368,8 @@ class CalculatorView:
     def update_buttons(self, options, buttons):
         """Динамически обновляет кнопки"""
         for widget in self.root.winfo_children():
-            if isinstance(widget, tk.Button) and widget not in self.decorator_option_widgets and widget not in self.history_option_widgets:
+            if isinstance(widget,
+                          tk.Button) and widget not in self.decorator_option_widgets and widget not in self.history_option_widgets:
                 widget.destroy()
 
         self.all_buttons = []
@@ -363,11 +384,11 @@ class CalculatorView:
                 # Определяем цвет кнопки
                 fg_color = "white" if button.isdigit() or button == "=" else ("#038575" if button == "C" else "#327eed")
                 bg_color = "#307af7" if button == "=" else "#24282c"
-                
+
                 # Особый цвет для кнопок памяти
                 if button in ["MS", "MR", "M+", "MC"]:
                     fg_color = "#ffcc00"
-                
+
                 btn = tk.Button(
                     self.root, text=button, width=60 // 10, height=60 // 30, font=("Arial", 15, "bold"),
                     fg=fg_color, bg=bg_color, cursor="hand2",
@@ -381,11 +402,11 @@ class CalculatorView:
             row_val += 1
 
         self.update_font_sizes()
-        
+
     def update_decorator_options(self, decorator_options):
         """Обновляет опции декораторов"""
         self.decorator_options = decorator_options
-        
+
         # Обновляем переключатели декораторов
         for key, val in decorator_options.items():
             if key in self.decorator_options_vars:
@@ -464,19 +485,19 @@ class CalculatorView:
 
     def insert_text(self, text):
         self.entry.insert(tk.END, text)
-    
+
     def show_execution_time(self, time_ms):
         """Показывает время выполнения в статусной строке"""
         self.status_bar.config(text=f"Время выполнения: {time_ms:.3f} мс")
-        
+
     def show_memory_status(self, status):
         """Показывает статус операций с памятью"""
         self.status_bar.config(text=status)
-        
+
     def show_status_message(self, message):
         """Показывает сообщение в статусной строке"""
         self.status_bar.config(text=message)
-    
+
     def show_history_window(self, history):
         """Показывает окно истории"""
         history_window = tk.Toplevel(self.root)
@@ -487,7 +508,7 @@ class CalculatorView:
         history_frame.pack(fill="both", expand=True)
 
         canvas = tk.Canvas(history_frame)
-        scrollbar = tk.Scrollbar(history_frame, orient="vertical", cursor="hand1",command=canvas.yview)
+        scrollbar = tk.Scrollbar(history_frame, orient="vertical", cursor="hand1", command=canvas.yview)
         canvas.configure(yscrollcommand=scrollbar.set)
 
         content_frame = tk.Frame(canvas)
@@ -501,7 +522,7 @@ class CalculatorView:
             expr_label = tk.Label(row_frame, text=line, font=("Arial", 12), width=30, anchor="w")
             expr_label.pack(side="left", padx=5)
             insert_button = tk.Button(
-                row_frame, text="Вставить",cursor="hand2",
+                row_frame, text="Вставить", cursor="hand2",
                 command=lambda expr=line: self.controller.insert_from_history(expr)
             )
             insert_button.pack(side="right", padx=5)
