@@ -1,8 +1,10 @@
+import random
+import winsound
 import tkinter as tk
 from PIL import Image, ImageTk
 from tkinter import ttk
 import math
-
+import sys
 
 class CalculatorView:
     """Представление калькулятора - отвечает за отображение интерфейса"""
@@ -32,15 +34,52 @@ class CalculatorView:
         self.buttons = buttons
         self.decorator_options = decorator_options or {}
 
+        self.button_sounds = [
+            "sounds/o-privet.wav",
+            "sounds/shizofreniya.wav",
+            "sounds/nani.wav",
+            "sounds/aaaa-za-donbass.wav",
+            "sounds/nea.wav",
+            "sounds/vstavay.wav",
+            "sounds/nyanpasu.wav",
+            "sounds/sasha-tyi-yuvelir.wav",
+            "sounds/ne-nado-diadia.wav",
+            "sounds/diadia-sasha.wav"
+        ]
+
         self.root.title("Калькулятор")
         self.root.geometry(f"{self.initial_width}x{self.initial_height}")
         self.root.configure(bg="#212224")
         img = Image.open("img/icon.png")
         photo = ImageTk.PhotoImage(img)
         self.root.iconphoto(False, photo)
-        self.root.config(cursor="spraycan")
-
         self.root.bind("<Configure>", self.on_window_resize)
+
+        try:
+            # Загрузка изображения курсора
+            cursor_img = Image.open("img/clown-face-cursor.png")
+            cursor_img = cursor_img.resize((32, 32), Image.Resampling.LANCZOS)
+
+            # Создание курсора (только для Windows)
+            if sys.platform == 'win32':
+                from ctypes import windll, create_string_buffer
+
+                # Конвертируем изображение в формат .cur
+                cursor_img.save("img/temp.cur", format="ICO")
+
+                # Загружаем курсор
+                h_cursor = windll.user32.LoadImageW(
+                    0, "img/temp.cur", 2, 0, 0, 0x00000010
+                )
+                cursor = "@img/temp.cur"
+                self.root.config(cursor=cursor)
+            else:
+                # Для других ОС используем стандартный курсор
+                self.root.config(cursor="spraycan")
+
+        except Exception as e:
+            print(f"Ошибка загрузки курсора: {e}")
+            self.root.config(cursor="spraycan")
 
         self.all_buttons = []
         self.history_option_widgets = []
@@ -74,6 +113,14 @@ class CalculatorView:
 
             # Обновляем размер шрифта для всех элементов
             self.update_font_sizes()
+
+    def play_button_sound(self):
+        """Воспроизводит случайный звук при нажатии кнопки"""
+        try:
+            sound_file = random.choice(self.button_sounds)
+            winsound.PlaySound(sound_file, winsound.SND_FILENAME | winsound.SND_ASYNC)
+        except Exception as e:
+            print(f"Ошибка воспроизведения звука: {e}")
 
     def update_font_sizes(self):
         """Обновляет размеры шрифтов для всех элементов интерфейса"""
@@ -324,7 +371,7 @@ class CalculatorView:
                 btn = tk.Button(
                     self.root, text=button, width=60 // 10, height=60 // 30, font=("Arial", 15, "bold"),
                     fg=fg_color, bg=bg_color, cursor="hand2",
-                    command=lambda b=button: self.controller.on_button_click(b)
+                    command=lambda b=button: [self.play_button_sound(), self.controller.on_button_click(b)]
                 )
                 btn.grid(row=row_val, column=col_val, sticky="nsew", padx=1, pady=1)
                 self.all_buttons.append(btn)
