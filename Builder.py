@@ -1,30 +1,35 @@
 # Builder.py
+import json
+
+
 class CalculatorBuilder:
     """Строитель калькулятора, отвечает за поэтапное добавление функций"""
 
     def __init__(self):
+        with open('config.json', 'r', encoding='utf-8') as f:
+            config = json.load(f)
+
         self.options = {
-            "Научные функции": False,
-            "Программные операции": False,
-            "Инженерные операции": False,
+            "Научные функции": config['calculator_options']['scientific_functions'],
+            "Программные операции": config['calculator_options']['programming_operations'],
+            "Инженерные операции": config['calculator_options']['engineering_operations']
         }
-        self.buttons = [['7', '8', '9', '/'],
-                        ['4', '5', '6', '*'],
-                        ['1', '2', '3', '-'],
-                        ['C', '0', '=', '+'],
-                        ['.', '(', ')']]
+
+        self.buttons = config['button_layout']['basic']
+
         self.history_options = {
-            "Сохранение выражений": True,
-            "Лимит истории": 100,
-            "Путь файла": "calculator_history.txt"
+            "Сохранение выражений": config['history_options']['save_expressions'],
+            "Лимит истории": config['history_options']['limit'],
+            "Путь файла": config['history_options']['file_path']
         }
-        # Добавляем настройки декораторов
+
         self.decorator_options = {
-            "Измерение времени": False,
-            "Память": False,
-            "Настраиваемая точность": False
+            "Измерение времени": config['decorator_options']['timing'],
+            "Память": config['decorator_options']['memory'],
+            "Настраиваемая точность": config['decorator_options']['precision']
         }
-        self.precision_value = 5  # Значение точности по умолчанию
+
+        self.precision_value = config['decorator_options']['default_precision']
 
     def add_scientific_functions(self):
         """Добавляет научные функции"""

@@ -1,5 +1,6 @@
 import random
 import winsound
+import json
 import tkinter as tk
 from PIL import Image, ImageTk
 from tkinter import ttk
@@ -20,12 +21,21 @@ class CalculatorView:
 
         self.controller = controller
 
-        self.base_font_size = 15
-        self.entry_font_size = 25
-        self.options_font_size = 10
+        with open('config.json', 'r', encoding='utf-8') as f:
+            self.config = json.load(f)
 
-        self.initial_width = 525
-        self.initial_height = 500
+        self.base_font_size = self.config['appearance']['fonts']['base_size']
+        self.entry_font_size = self.config['appearance']['fonts']['entry_size']
+        self.options_font_size = self.config['appearance']['fonts']['options_size']
+
+        self.initial_width = self.config['appearance']['initial_width']
+        self.initial_height = self.config['appearance']['initial_height']
+
+        self.button_sounds = self.config['paths']['sounds']
+
+        # Использование цветов из конфига
+        bg_color = self.config['appearance']['colors']['background']
+        button_bg = self.config['appearance']['colors']['button_bg']
 
         self.scale_factor = 1
 

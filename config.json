@@ -1,0 +1,72 @@
+{
+  "calculator_options": {
+    "scientific_functions": false,
+    "programming_operations": false,
+    "engineering_operations": false
+  },
+  "button_layout": {
+    "basic": [
+      ["7", "8", "9", "/"],
+      ["4", "5", "6", "*"],
+      ["1", "2", "3", "-"],
+      ["C", "0", "=", "+"],
+      [".", "(", ")"]
+    ],
+    "scientific": ["sin", "cos", "tan", "cot", "√", "^"],
+    "programming": ["and", "or", "xor", "not"],
+    "engineering": ["log", "exp", "mod"],
+    "memory": ["MS", "MR", "M+", "MC"]
+  },
+  "history_options": {
+    "save_expressions": true,
+    "limit": 100,
+    "file_path": "calculator_history.txt"
+  },
+  "decorator_options": {
+    "timing": false,
+    "memory": false,
+    "precision": false,
+    "default_precision": 5
+  },
+  "appearance": {
+    "window_title": "Калькулятор",
+    "initial_width": 525,
+    "initial_height": 500,
+    "colors": {
+      "background": "#212224",
+      "button_bg": "#24282c",
+      "button_fg": "white",
+      "equals_bg": "#307af7",
+      "clear_fg": "#038575",
+      "operator_fg": "#327eed",
+      "memory_fg": "#ffcc00",
+      "entry_bg": "black",
+      "entry_fg": "white"
+    },
+    "fonts": {
+      "base_size": 15,
+      "entry_size": 25,
+      "options_size": 10,
+      "family": "Arial"
+    }
+  },
+  "paths": {
+    "icon": "img/icon.png",
+    "cursor": "img/clown-face-cursor.png",
+    "loading_gif": "img/loading.gif",
+    "vergil_video": "img/Vergil Portal.mp4",
+    "vergil_audio": "img/Vergil Portal.mp3",
+    "sounds": [
+      "sounds/o-privet.wav",
+      "sounds/shizofreniya.wav",
+      "sounds/nani.wav",
+      "sounds/aaaa-za-donbass.wav",
+      "sounds/nea.wav",
+      "sounds/vstavay.wav",
+      "sounds/nyanpasu.wav",
+      "sounds/sasha-tyi-yuvelir.wav",
+      "sounds/ne-nado-diadia.wav",
+      "sounds/diadia-sasha.wav"
+    ]
+  }
+}
