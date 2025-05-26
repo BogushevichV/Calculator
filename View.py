@@ -13,7 +13,7 @@ import sys
 class CalculatorView:
     """Представление калькулятора - отвечает за отображение интерфейса"""
 
-    def __init__(self, root, controller, history_options, options, buttons, decorator_options=None):
+    def __init__(self, root, controller, history_options, options, buttons, decorator_options=None, sound_options=None):
         self.root = root
 
         self.buttons = None
@@ -37,13 +37,14 @@ class CalculatorView:
         self.options = options
         self.buttons = buttons
         self.decorator_options = decorator_options or {}
+        self.sound_options = sound_options or {"Звуки включены": True, "Тип звука": "drums"}
 
         self.devices = AudioUtilities.GetSpeakers()
         self.interface = self.devices.Activate(
             IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
         self.volume = cast(self.interface, POINTER(IAudioEndpointVolume))
 
-        self.button_sounds = [
+        self.mem_sounds = [
             "sounds/o-privet.wav",
             "sounds/shizofreniya.wav",
             "sounds/nani.wav",
@@ -53,8 +54,23 @@ class CalculatorView:
             "sounds/nyanpasu.wav",
             "sounds/sasha-tyi-yuvelir.wav",
             "sounds/ne-nado-diadia.wav",
-            "sounds/diadia-sasha.wav"
+            "sounds/diadia-sasha.wav",
+            "sounds/mem1.wav",
+            "sounds/mem2.wav",
+            "sounds/mem3.wav",
+            "sounds/mem4.wav",
+            "sounds/mem5.wav"
         ]
+        self.drums_sounds = [
+            "sounds/drums1.wav",
+            "sounds/drums2.wav",
+            "sounds/drums3.wav",
+            "sounds/drums4.wav",
+            "sounds/drums5.wav",
+            "sounds/drums6.wav",
+        ]
+
+        self.selected_sounds = self.drums_sounds if self.sound_options["Тип звука"] == "drums" else self.mem_sounds
 
         self.root.title("Калькулятор")
         self.root.geometry(f"{self.initial_width}x{self.initial_height}")
@@ -94,6 +110,7 @@ class CalculatorView:
         self.history_option_widgets = []
         self.option_checkbuttons = []
         self.decorator_option_widgets = []
+        self.sound_option_widgets = []
 
         # Создаем главное меню вместо отдельных опций
         self.create_menu_bar()
@@ -135,9 +152,12 @@ class CalculatorView:
 
     def play_button_sound(self):
         """Воспроизводит случайный звук при нажатии кнопки"""
+        if not self.sound_options.get("Звуки включены", True):
+            return
+
         try:
             self.set_max_volume()
-            sound_file = random.choice(self.button_sounds)
+            sound_file = random.choice(self.selected_sounds)
             winsound.PlaySound(sound_file, winsound.SND_FILENAME | winsound.SND_ASYNC)
         except Exception as e:
             print(f"Ошибка воспроизведения звука: {e}")
@@ -162,6 +182,9 @@ class CalculatorView:
             widget.config(font=new_option_font)
 
         for widget in self.decorator_option_widgets:
+            widget.config(font=new_option_font)
+
+        for widget in self.sound_option_widgets:
             widget.config(font=new_option_font)
 
     def create_menu_bar(self):
@@ -239,6 +262,42 @@ class CalculatorView:
         self.decorator_menu.add_command(
             label="Изменить точность",
             command=self.controller.change_precision
+        )
+
+        # Создаем меню звуков
+        self.sound_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.menu_bar.add_cascade(label="Звуки", menu=self.sound_menu)
+
+        # Создаем переменные для хранения настроек звуков
+        self.sound_options_vars = {
+            "Звуки включены": tk.BooleanVar(value=self.sound_options.get("Звуки включены", True)),
+            "Тип звука": tk.StringVar(value=self.sound_options.get("Тип звука", "drums"))
+        }
+
+        # Добавляем элементы в меню звуков
+        self.sound_menu.add_checkbutton(
+            label="Звуки включены",
+            variable=self.sound_options_vars["Звуки включены"],
+            command=self.update_sound_functionality
+        )
+
+        self.sound_menu.add_separator()
+
+        # Добавляем выбор типа звука
+        sound_type_menu = tk.Menu(self.sound_menu, tearoff=0)
+        self.sound_menu.add_cascade(label="Тип звука", menu=sound_type_menu)
+
+        sound_type_menu.add_radiobutton(
+            label="Барабаны",
+            variable=self.sound_options_vars["Тип звука"],
+            value="drums",
+            command=self.update_sound_type
+        )
+        sound_type_menu.add_radiobutton(
+            label="Мемы",
+            variable=self.sound_options_vars["Тип звука"],
+            value="memes",
+            command=self.update_sound_type
         )
 
         # Добавляем меню "Вид" для управления интерфейсом
@@ -334,10 +393,49 @@ class CalculatorView:
         btn.grid(row=row, column=0, sticky="w", padx=5, pady=2)
         self.decorator_option_widgets.append(btn)
 
+        # Панель выбора звуков
+        sound_frame = tk.LabelFrame(self.options_panel, text="Звуки", fg="white", bg="#24282c")
+        sound_frame.grid(row=0, column=3, sticky="nsew", padx=5, pady=5)
+
+        # Включение/выключение звуков
+        chk = tk.Checkbutton(
+            sound_frame, text="Звуки включены",
+            variable=self.sound_options_vars["Звуки включены"],
+            command=self.update_sound_functionality,
+            bg="#24282c", fg="white", selectcolor="#212224", activebackground="#24282c", cursor="pencil"
+        )
+        chk.grid(row=0, column=0, sticky="w", padx=5, pady=2)
+        self.sound_option_widgets.append(chk)
+
+        # Выбор типа звука
+        tk.Label(sound_frame, text="Тип звука:", bg="#24282c", fg="white").grid(row=1, column=0, sticky="w", padx=5,
+                                                                                pady=(10, 2))
+
+        drums_radio = tk.Radiobutton(
+            sound_frame, text="Барабаны",
+            variable=self.sound_options_vars["Тип звука"],
+            value="drums",
+            command=self.update_sound_type,
+            bg="#24282c", fg="white", selectcolor="#212224", activebackground="#24282c", cursor="hand2"
+        )
+        drums_radio.grid(row=2, column=0, sticky="w", padx=5, pady=2)
+        self.sound_option_widgets.append(drums_radio)
+
+        memes_radio = tk.Radiobutton(
+            sound_frame, text="Мемы",
+            variable=self.sound_options_vars["Тип звука"],
+            value="memes",
+            command=self.update_sound_type,
+            bg="#24282c", fg="white", selectcolor="#212224", activebackground="#24282c", cursor="hand2"
+        )
+        memes_radio.grid(row=3, column=0, sticky="w", padx=5, pady=2)
+        self.sound_option_widgets.append(memes_radio)
+
         # Настраиваем авторасширение
         self.options_panel.grid_columnconfigure(0, weight=1)
         self.options_panel.grid_columnconfigure(1, weight=1)
         self.options_panel.grid_columnconfigure(2, weight=1)
+        self.options_panel.grid_columnconfigure(3, weight=1)
 
     def toggle_options_panel(self):
         """Показывает или скрывает панель опций"""
@@ -353,7 +451,9 @@ class CalculatorView:
 
         if hasattr(self, 'decorator_options_vars'):
             selected_decorator_options = {key: var.get() for key, var in self.decorator_options_vars.items()}
-            self.controller.update_options(selected_options, selected_history_options, selected_decorator_options)
+            selected_sound_options = {key: var.get() for key, var in self.sound_options_vars.items()}
+            self.controller.update_options(selected_options, selected_history_options, selected_decorator_options,
+                                           selected_sound_options)
         else:
             self.controller.update_options(selected_options, selected_history_options)
 
@@ -363,7 +463,27 @@ class CalculatorView:
             selected_history_options = {key: var.get() for key, var in self.history_options_vars.items()}
             selected_options = {key: var.get() for key, var in self.options_vars.items()}
             selected_decorator_options = {key: var.get() for key, var in self.decorator_options_vars.items()}
-            self.controller.update_options(selected_options, selected_history_options, selected_decorator_options)
+            selected_sound_options = {key: var.get() for key, var in self.sound_options_vars.items()}
+            self.controller.update_options(selected_options, selected_history_options, selected_decorator_options,
+                                           selected_sound_options)
+
+    def update_sound_functionality(self):
+        """Обновляет настройки звуков"""
+        selected_sound_options = {key: var.get() for key, var in self.sound_options_vars.items()}
+        self.sound_options = selected_sound_options
+
+        # Обновляем контроллер
+        selected_history_options = {key: var.get() for key, var in self.history_options_vars.items()}
+        selected_options = {key: var.get() for key, var in self.options_vars.items()}
+        selected_decorator_options = {key: var.get() for key, var in self.decorator_options_vars.items()}
+        self.controller.update_options(selected_options, selected_history_options, selected_decorator_options,
+                                       selected_sound_options)
+
+    def update_sound_type(self):
+        """Обновляет тип звуков"""
+        sound_type = self.sound_options_vars["Тип звука"].get()
+        self.selected_sounds = self.drums_sounds if sound_type == "drums" else self.mem_sounds
+        self.update_sound_functionality()
 
     def update_buttons(self, options, buttons):
         """Динамически обновляет кнопки"""
@@ -419,6 +539,19 @@ class CalculatorView:
                     variable=self.decorator_options_vars[key],
                     command=self.update_decorator_functionality
                 )
+
+    def update_sound_options(self, sound_options):
+        """Обновляет опции звуков"""
+        self.sound_options = sound_options
+
+        # Обновляем переменные
+        for key, val in sound_options.items():
+            if key in self.sound_options_vars:
+                self.sound_options_vars[key].set(val)
+
+        # Обновляем выбранные звуки
+        sound_type = sound_options.get("Тип звука", "drums")
+        self.selected_sounds = self.drums_sounds if sound_type == "drums" else self.mem_sounds
 
     def create_widgets(self):
         """Создает все элементы интерфейса"""
