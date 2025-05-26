@@ -11,6 +11,7 @@ import sys
 from ConfigManager import ConfigManager
 
 
+
 class CalculatorView:
     """Представление калькулятора - отвечает за отображение интерфейса"""
 
@@ -35,6 +36,7 @@ class CalculatorView:
         # Получение параметров окна из конфига
         self.initial_width = self.config.get("ui", "window", "initial_width")
         self.initial_height = self.config.get("ui", "window", "initial_height")
+
 
         self.scale_factor = 1
 
@@ -86,6 +88,14 @@ class CalculatorView:
         # Создаем главное меню вместо отдельных опций
         self.create_menu_bar()
 
+
+        self.root.bind("<Configure>", self.on_window_resize)
+
+        self.all_buttons = []
+        self.history_option_widgets = []
+        self.option_checkbuttons = []
+
+        self.create_options()
         self.create_widgets()
         self.update_buttons(self.options, self.buttons)
         self.setup_layout()
@@ -152,6 +162,7 @@ class CalculatorView:
             max_scale = self.config.get("ui", "scaling", "max_scale_factor")
             self.scale_factor = max(min_scale, min(self.scale_factor, max_scale))
 
+
             # Обновляем размер шрифта для всех элементов
             self.update_font_sizes()
 
@@ -191,6 +202,7 @@ class CalculatorView:
 
         # Обновляем шрифт кнопок
         new_button_font = (button_font_family, int(self.base_font_size * self.scale_factor), button_font_weight)
+
         for button in self.all_buttons:
             button.config(font=new_button_font)
 
@@ -200,6 +212,7 @@ class CalculatorView:
 
         # Обновляем шрифт чекбоксов
         new_option_font = (entry_font_family, int(self.options_font_size * self.scale_factor))
+
         for chk in self.option_checkbuttons:
             chk.config(font=new_option_font)
 
@@ -229,6 +242,7 @@ class CalculatorView:
         self.menu_bar.add_cascade(label=menu_labels.get("functions"), menu=self.functions_menu)
 
         # Создаем переменные для хранения состояний опций
+
         self.options_vars = {
             key: tk.BooleanVar(value=val) for key, val in self.options.items()
         }
@@ -246,6 +260,7 @@ class CalculatorView:
         self.menu_bar.add_cascade(label=menu_labels.get("history"), menu=self.history_menu)
 
         # Создаем переменные для хранения настроек истории
+
         self.history_options_vars = {
             "Сохранение выражений": tk.BooleanVar(value=self.history_options["Сохранение выражений"]),
             "Лимит истории": tk.IntVar(value=self.history_options["Лимит истории"]),
@@ -495,6 +510,7 @@ class CalculatorView:
         else:
             self.options_panel.grid_remove()
 
+
     def update_functionality(self):
         """Обновляет калькулятор при изменении настроек"""
         selected_history_options = {key: var.get() for key, var in self.history_options_vars.items()}
@@ -541,11 +557,13 @@ class CalculatorView:
         for widget in self.root.winfo_children():
             if isinstance(widget,
                           tk.Button) and widget not in self.decorator_option_widgets and widget not in self.history_option_widgets:
+
                 widget.destroy()
 
         self.all_buttons = []
 
         row_val = self.config.get("grid_layout", "buttons_start_row")
+
         col_val = 0
 
         self.update_layout(len(buttons[0]))
@@ -584,6 +602,7 @@ class CalculatorView:
                     command=lambda b=button: [self.play_button_sound(), self.controller.on_button_click(b)]
                 )
                 btn.grid(row=row_val, column=col_val, sticky="nsew", padx=padding, pady=padding)
+
                 self.all_buttons.append(btn)
 
                 col_val += 1
@@ -629,6 +648,7 @@ class CalculatorView:
         self.entry_frame = tk.Frame(self.root, bg=self.config.get("ui", "colors", "background"))
         self.entry_frame.grid(row=self.config.get("grid_layout", "entry_row"), column=0, columnspan=10, sticky="nsew")
 
+
         entry_font_family = self.config.get("ui", "fonts", "entry_font", "family")
         entry_bg = self.config.get("ui", "colors", "entry_background")
         entry_fg = self.config.get("ui", "colors", "entry_foreground")
@@ -642,6 +662,7 @@ class CalculatorView:
         history_img_size = self.config.get("images", "history_button", "size")
         img_pil = Image.open(history_img_path)
         img_pil = img_pil.resize(tuple(history_img_size))
+
         self.img = ImageTk.PhotoImage(img_pil)
 
         tk.Button(
@@ -650,6 +671,7 @@ class CalculatorView:
             command=lambda: self.controller.show_history()
         ).grid(row=1, column=1, sticky="ew", padx=self.config.get("ui", "layout", "padding"),
                pady=self.config.get("ui", "layout", "padding"))
+
 
         style = ttk.Style()
         style.theme_use("clam")
@@ -668,10 +690,12 @@ class CalculatorView:
         self.scrollbar.grid(row=2, column=0, columnspan=10, sticky="nsew")
         self.entry.config(xscrollcommand=self.scrollbar.set)
 
+
         # Привязка клавиш
         self.entry.bind("<KeyPress>", self.controller.on_key_press)
 
     def setup_layout(self):
+
         self.entry_frame.grid_columnconfigure(0, weight=1)
         for i in range(3):
             self.entry_frame.grid_rowconfigure(i, weight=1)
@@ -691,6 +715,7 @@ class CalculatorView:
         self.entry.delete("1.0", tk.END)
 
     def set_entry_text(self, text):
+
         self.entry.delete("1.0", tk.END)
         self.entry.insert(tk.END, text)
 
@@ -713,6 +738,7 @@ class CalculatorView:
 
     def show_history_window(self, history):
         """Показывает окно истории"""
+
         history_window = tk.Toplevel(self.root)
         history_window.title(self.config.get("history", "window", "title"))
 
@@ -756,3 +782,4 @@ class CalculatorView:
 
         scale_factor = self.config.get("history", "window", "scale_factor")
         history_window.geometry(f"{int(self.root.winfo_width() * scale_factor)}x{self.root.winfo_height()}")
+

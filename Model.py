@@ -4,6 +4,7 @@ import re
 from Decorator import ICalculator
 
 class CalculatorModel(ICalculator):
+
     """Модель калькулятора - отвечает за хранение данных и бизнес-логику"""
 
     def __init__(self, options, history_options):
@@ -29,6 +30,8 @@ class CalculatorModel(ICalculator):
         expression = expression.replace("^", "**")  # Замена ^ на **
 
         """Обрабатывает тригонометрические функции в выражении"""
+
+
         expression = re.sub(r'sin\((.*?)\)', lambda m: str(math.sin(math.radians(float(m.group(1))))), expression)
         expression = re.sub(r'cos\((.*?)\)', lambda m: str(math.cos(math.radians(float(m.group(1))))), expression)
         expression = re.sub(r'tan\((.*?)\)', lambda m: str(math.tan(math.radians(float(m.group(1))))), expression)
@@ -68,6 +71,7 @@ class CalculatorModel(ICalculator):
         try:
             # Читаем существующую историю
             with open(self.history_options["Путь файла"], "r", encoding='utf-8') as file:
+
                 lines = file.readlines()
         except FileNotFoundError:
             lines = []
@@ -80,6 +84,7 @@ class CalculatorModel(ICalculator):
 
         # Записываем историю обратно в файл
         with open(self.history_options["Путь файла"], "w", encoding='utf-8') as file:
+
             file.writelines(lines)
 
     def get_history(self):

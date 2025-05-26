@@ -4,6 +4,7 @@ from Model import CalculatorModel
 from View import CalculatorView
 from Builder import CalculatorBuilder
 from Decorator import TimingDecorator, MemoryDecorator, PrecisionDecorator
+
 from tkinter import filedialog, simpledialog
 
 
@@ -12,6 +13,7 @@ class CalculatorController:
 
     def __init__(self, root):
         self.builder = CalculatorBuilder()
+
         self.options, self.history_options, self.buttons, self.decorator_options, self.precision_value = self.builder.build()
 
         # Создаем базовую модель
@@ -43,6 +45,7 @@ class CalculatorController:
         self.builder = CalculatorBuilder()  # Новый Строитель
 
         # Применяем выбранные опции
+
         if selected_options["Научные функции"]:
             self.builder.add_scientific_functions()
         if selected_options["Программные операции"]:
@@ -74,6 +77,7 @@ class CalculatorController:
         self.view.update_decorator_options(self.decorator_options)
 
     def on_button_click(self, char):
+
         if char == "C":
             self.view.clear_entry()
         elif char == "=":
@@ -163,6 +167,7 @@ class CalculatorController:
             current = current._calculator
         return None
 
+
     def change_history_limit(self):
         """Изменяет лимит истории"""
         new_limit = simpledialog.askinteger("Лимит истории", 
@@ -172,6 +177,7 @@ class CalculatorController:
         if new_limit:
             self.history_options["Лимит истории"] = new_limit
             self.base_model.update_history_options(self.history_options)
+
 
     def change_history_path(self):
         """Изменяет путь к файлу истории"""
@@ -186,6 +192,7 @@ class CalculatorController:
             self.base_model.update_history_options(self.history_options)
 
     def insert_from_history(self, expression):
+
         self.view.set_entry_text(expression.strip())
 
     def change_precision(self):

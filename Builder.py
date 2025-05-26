@@ -1,4 +1,5 @@
 # Builder.py
+
 class CalculatorBuilder:
     """Строитель калькулятора, отвечает за поэтапное добавление функций"""
 
@@ -25,6 +26,7 @@ class CalculatorBuilder:
             "Настраиваемая точность": False
         }
         self.precision_value = 5  # Значение точности по умолчанию
+
 
     def add_scientific_functions(self):
         """Добавляет научные функции"""
@@ -92,3 +94,4 @@ class CalculatorBuilder:
     def build(self):
         """Создает и возвращает итоговый объект"""
         return self.options, self.history_options, self.buttons, self.decorator_options, self.precision_value
+
