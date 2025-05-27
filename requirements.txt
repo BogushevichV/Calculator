@@ -1,0 +1,7 @@
+comtypes~=1.4.11
+pycaw~=20240210
+pillow~=11.2.1
+Cython~=3.1.1
+setuptools~=80.8.0
+opencv-python~=4.11.0.86
+pygame~=2.6.1
