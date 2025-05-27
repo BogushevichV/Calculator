@@ -9,6 +9,7 @@ from tkinter import ttk
 import math
 import sys
 from ConfigManager import ConfigManager
+from sound_controller import SoundController
 
 
 
@@ -95,7 +96,6 @@ class CalculatorView:
         self.history_option_widgets = []
         self.option_checkbuttons = []
 
-        self.create_options()
         self.create_widgets()
         self.update_buttons(self.options, self.buttons)
         self.setup_layout()
@@ -104,6 +104,33 @@ class CalculatorView:
         self.status_bar = tk.Label(self.root, text="", bd=1, relief=tk.SUNKEN, anchor=tk.W, font=30)
         status_bar_row = self.config.get("grid_layout", "status_bar_row")
         self.status_bar.grid(row=status_bar_row, column=0, columnspan=10, sticky="nsew")
+
+        self.sound_controller = SoundController(
+            drums_sounds=self.drums_sounds,
+            mem_sounds=self.mem_sounds,
+            enabled=self.sound_options["Звуки включены"],
+            sound_type=self.sound_options["Тип звука"]
+        )
+
+    def play_button_sound(self):
+        """Воспроизводит случайный звук при нажатии кнопки"""
+        self.sound_controller.play_button_sound()
+
+    def update_sound_functionality(self):
+        """Обновляет настройки звуков"""
+        selected_sound_options = {key: var.get() for key, var in self.sound_options_vars.items()}
+        self.sound_options = selected_sound_options
+
+        # Обновляем контроллер звуков
+        self.sound_controller.set_sounds_enabled(selected_sound_options["Звуки включены"])
+        self.sound_controller.set_sound_type(selected_sound_options["Тип звука"])
+
+        # Обновляем контроллер калькулятора
+        selected_history_options = {key: var.get() for key, var in self.history_options_vars.items()}
+        selected_options = {key: var.get() for key, var in self.options_vars.items()}
+        selected_decorator_options = {key: var.get() for key, var in self.decorator_options_vars.items()}
+        self.controller.update_options(selected_options, selected_history_options, selected_decorator_options,
+                                       selected_sound_options)
 
     def setup_cursor(self):
         """Настройка курсора на основе конфигурации"""
@@ -179,19 +206,6 @@ class CalculatorView:
         except Exception as e:
             print(f"Ошибка установки громкости: {e}")
 
-    def play_button_sound(self):
-        """Воспроизводит случайный звук при нажатии кнопки"""
-        sounds_enabled = self.sound_options.get("Звуки включены",
-                                                self.config.get("sounds", "default_options", "enabled"))
-        if not sounds_enabled:
-            return
-
-        try:
-            self.set_max_volume()
-            sound_file = random.choice(self.selected_sounds)
-            winsound.PlaySound(sound_file, winsound.SND_FILENAME | winsound.SND_ASYNC)
-        except Exception as e:
-            print(f"Ошибка воспроизведения звука: {e}")
 
     def update_font_sizes(self):
         """Обновляет размеры шрифтов для всех элементов интерфейса"""
@@ -533,18 +547,6 @@ class CalculatorView:
             selected_sound_options = {key: var.get() for key, var in self.sound_options_vars.items()}
             self.controller.update_options(selected_options, selected_history_options, selected_decorator_options,
                                            selected_sound_options)
-
-    def update_sound_functionality(self):
-        """Обновляет настройки звуков"""
-        selected_sound_options = {key: var.get() for key, var in self.sound_options_vars.items()}
-        self.sound_options = selected_sound_options
-
-        # Обновляем контроллер
-        selected_history_options = {key: var.get() for key, var in self.history_options_vars.items()}
-        selected_options = {key: var.get() for key, var in self.options_vars.items()}
-        selected_decorator_options = {key: var.get() for key, var in self.decorator_options_vars.items()}
-        self.controller.update_options(selected_options, selected_history_options, selected_decorator_options,
-                                       selected_sound_options)
 
     def update_sound_type(self):
         """Обновляет тип звуков"""
